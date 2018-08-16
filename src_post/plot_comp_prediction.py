@@ -77,8 +77,6 @@ def select_category_rainfall(data_path,filelist,batch_size,tdim_use,
         v = np.max(target,axis=(1,2,3,4))
         rain_maxes.extend(v.tolist())
         fnames.extend(fname_batch)
-        if i_batch > 100:
-            break
     #set up bins
     bin = [-0.01,0.1,0.5,1,5,10,50,250]
     #attribute the values into its specific bins
@@ -117,10 +115,10 @@ def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
                                                batch_size=batch_size,
                                                shuffle=False)
     # load the saved model
-    #convlstm = torch.load(model_fname)
-    convlstm = CLSTM_EP(input_channels=1, hidden_channels=12,
-                        kernel_size=3).cuda()
-    convlstm.load_state_dict(torch.load(model_fname))
+    convlstm = torch.load(model_fname)
+    #convlstm = CLSTM_EP(input_channels=1, hidden_channels=12,
+    #                    kernel_size=3).cuda()
+    #convlstm.load_state_dict(torch.load(model_fname))
     # evaluation mode
     convlstm.eval()
     #
@@ -186,8 +184,8 @@ tdim_use = 6
 
 data_path = '../data/data_h5/'
 filelist = '../data/valid_simple_JMARadar.csv'
-model_fname = 'run_20180814_base/trained_CLSTM.model'
-pic_path = 'run_20180814_base/png/'
+model_fname = 'result_20180814_base/trained_CLSTM.model'
+pic_path = 'result_20180814_base/png/'
 
 df_sampled = select_category_rainfall(data_path,filelist,batch_size,tdim_use,
                                       Nsample=10)
