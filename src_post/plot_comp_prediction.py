@@ -143,22 +143,24 @@ def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
                 print('Plotting: ',fname,np.max(pic_tg),np.max(pic_pred))
                 # plot
                 cm = Colormap_JMA()
-                fig, ax = plt.subplots(figsize=(10, 20))
+                fig, ax = plt.subplots(figsize=(20, 10))
                 fig.suptitle("Precip prediction starting at: "+fname, fontsize=20)
                 for nt in range(6):
-                    pos = nt*2+1
+                    pos = nt+1
                     dtstr = str((nt+1)*5)
                     # target
-                    plt.subplot(6,2,pos)
-                    plt.imshow(pic_tg[nt,:,:],vmin=0,vmax=50,cmap=cm,origin='lower')
+                    plt.subplot(2,6,pos)
+                    im = plt.imshow(pic_tg[nt,:,:],vmin=0,vmax=50,cmap=cm,origin='lower')
                     plt.title("true:"+dtstr+"min")
                     plt.grid()
                     # predicted
-                    plt.subplot(6,2,pos+1)
-                    plt.imshow(pic_pred[nt,:,:],vmin=0,vmax=50,cmap=cm,origin='lower')
+                    plt.subplot(2,6,pos+6)
+                    im = plt.imshow(pic_pred[nt,:,:],vmin=0,vmax=50,cmap=cm,origin='lower')
                     plt.title("pred:"+dtstr+"min")
-                    plt.colorbar()
                     plt.grid()
+                fig.subplots_adjust(right=0.95)
+                cbar_ax = fig.add_axes([0.96, 0.15, 0.01, 0.7])
+                fig.colorbar(im, cax=cbar_ax)
                 # save as png
                 i = df_sampled.index[df_sampled['fname']==fname]
                 i = int(i.values)

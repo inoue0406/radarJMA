@@ -34,9 +34,9 @@ def valid_persistence_epoch(epoch,num_epochs,valid_loader,loss_fn,valid_logger,o
         #for n in range(valid_loader.batch_size):
         for it in range(opt.tdim_use):
             # predict by the latest frame
-            # output.data[:,it,0,:,:] = input.data[:,(opt.tdim_use-1),0,:,:]
+            output.data[:,it,0,:,:] = input.data[:,(opt.tdim_use-1),0,:,:]
             # zero prediction
-            output.data[:,it,0,:,:] = 0.0
+            #output.data[:,it,0,:,:] = 0.0
     
         loss = loss_fn(output, target)
 
@@ -61,7 +61,7 @@ def valid_persistence_epoch(epoch,num_epochs,valid_loader,loss_fn,valid_logger,o
                    %(epoch+1, num_epochs, i_batch+1, len(valid_loader.dataset)//valid_loader.batch_size, loss.data[0]))
     # logging for epoch-averaged loss
     RMSE,CSI,FAR,POD,Cor = MetricRainfall(SumSE_all,hit_all,miss_all,falarm_all,
-                                          m_xy_all,m_xx_all,m_yy_all,reduce=True)
+                                          m_xy_all,m_xx_all,m_yy_all,axis=None)
     valid_logger.log({
         'epoch': epoch,
         'loss': losses.avg,

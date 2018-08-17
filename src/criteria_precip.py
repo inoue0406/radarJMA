@@ -30,19 +30,18 @@ def StatRainfall(Xtrue,Xmodel,th=0.5):
     m_yy     = np.sum(Xmodel*Xmodel,axis=(2,3,4))
     return(SumSE,hit,miss,falarm,m_xy,m_xx,m_yy)
 
-def MetricRainfall(SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,reduce=False):
-    # "reduce=False" produces stat of [sample x time] dim
-    # "reduce=True" produces scalar statistics for the whole batch
+def MetricRainfall(SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,axis=None):
+    # "axis=(0,1)" produces stat of [sample x time] dim
+    # "axis=None" produces scalar statistics for the whole batch
     # 
-    # reduce dim
-    if reduce == True:
-        SumSE  = np.sum(SumSE)
-        hit    = np.sum(hit)
-        miss   = np.sum(miss)
-        falarm = np.sum(miss)
-        m_xy   = np.sum(m_xy)
-        m_xx   = np.sum(m_xx)
-        m_yy   = np.sum(m_yy)
+    # reduce dim if specified
+    SumSE  = np.sum(SumSE,axis)
+    hit    = np.sum(hit,axis)
+    miss   = np.sum(miss,axis)
+    falarm = np.sum(miss,axis)
+    m_xy   = np.sum(m_xy,axis)
+    m_xx   = np.sum(m_xx,axis)
+    m_yy   = np.sum(m_yy,axis)
     # calc metrics based on statistics
     Nrain = hit+miss
     # Rainfall MSE
