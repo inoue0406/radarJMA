@@ -9,10 +9,10 @@ from convolution_lstm_mod import *
 from utils import AverageMeter, Logger
 from criteria_precip import *
 
-# validation for "Persistence" forecast 
+# testing for "Persistence" forecast 
             
-def valid_persistence_epoch(epoch,num_epochs,valid_loader,loss_fn,valid_logger,opt):
-    print('validation at epoch {}'.format(epoch+1))
+def test_persistence(test_loader,loss_fn,test_logger,opt):
+    print('Test for persistence forecast')
     
     losses = AverageMeter()
     
@@ -25,13 +25,13 @@ def valid_persistence_epoch(epoch,num_epochs,valid_loader,loss_fn,valid_logger,o
     m_xx_all = np.empty((0,opt.tdim_use),float)
     m_yy_all = np.empty((0,opt.tdim_use),float)
 
-    for i_batch, sample_batched in enumerate(valid_loader):
+    for i_batch, sample_batched in enumerate(test_loader):
         input = Variable(sample_batched['past']).cpu()
         target = Variable(sample_batched['future']).cpu()
         
         # Prediction by Persistence
         output = target.clone()
-        #for n in range(valid_loader.batch_size):
+        #for n in range(test_loader.batch_size):
         for it in range(opt.tdim_use):
             # predict by the latest frame
             output.data[:,it,0,:,:] = input.data[:,(opt.tdim_use-1),0,:,:]
@@ -57,19 +57,32 @@ def valid_persistence_epoch(epoch,num_epochs,valid_loader,loss_fn,valid_logger,o
         
         #if (i_batch+1) % 100 == 0:
         if (i_batch+1) % 1 == 0:
-            print ('Valid Epoch [%d/%d], Iter [%d/%d] Loss: %.4e' 
-                   %(epoch+1, num_epochs, i_batch+1, len(valid_loader.dataset)//valid_loader.batch_size, loss.data[0]))
-    # logging for epoch-averaged loss
+            print ('Testing, Iter [%d/%d] Loss: %.4e' 
+                   %(i_batch+1, len(test_loader.dataset)//test_loader.batch_size, loss.data[0]))
+    # logging for averaged loss
     RMSE,CSI,FAR,POD,Cor = MetricRainfall(SumSE_all,hit_all,miss_all,falarm_all,
                                           m_xy_all,m_xx_all,m_yy_all,axis=None)
-    valid_logger.log({
-        'epoch': epoch,
+    test_logger.log({
         'loss': losses.avg,
         'RMSE': RMSE,
         'CSI': CSI,
         'FAR': FAR,
         'POD': POD,
-        'Cor': Cor, 
-    })
+        'Cor': Cor})
+    # logging for loss by time
+    RMSE,CSI,FAR,POD,Cor = MetricRainfall(SumSE_all,hit_all,miss_all,falarm_all,
+                                          m_xy_all,m_xx_all,m_yy_all,axis=(0))
+    # save evaluated metric as csv file
+    tpred = (np.arange(opt.tdim_use)+1.0)*5.0 # in minutes
+    # import pdb; pdb.set_trace()
+    df = pd.DataFrame({'tpred_min':tpred,
+                       'RMSE':RMSE,
+                       'CSI':CSI,
+                       'FAR':FAR,
+                       'POD':POD,
+                       'Cor':Cor})
+    df.to_csv(convlstm,os.path.join(opt.result_path, 'test_evaluation_predtime.csv'))
+
+    
 
     
