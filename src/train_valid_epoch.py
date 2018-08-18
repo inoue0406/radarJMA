@@ -9,7 +9,11 @@ from convolution_lstm_mod import *
 from utils import AverageMeter, Logger
 from criteria_precip import *
 
-# training/validation for one epoch 
+# training/validation for one epoch
+
+# --------------------------
+# Training
+# --------------------------
 
 def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logger,train_batch_logger,opt):
     
@@ -84,7 +88,13 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
         'Cor': Cor, 
         'lr': optimizer.param_groups[0]['lr']
     })
-            
+    # free gpu memory
+    del input,target,output,loss
+
+# --------------------------
+# Validation
+# --------------------------
+
 def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt):
     print('validation at epoch {}'.format(epoch+1))
     
@@ -141,5 +151,71 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt):
         'POD': POD,
         'Cor': Cor, 
     })
+    # free gpu memory
+    del input,target,output,loss
+
+
+
+# --------------------------
+# Test
+# --------------------------
+
+def test_CLSTM_EP(test_loader,model,loss_fn,opt):
+    print('Testing for the model')
+    
+    # initialize
+    SumSE_all = np.empty((0,opt.tdim_use),float)
+    hit_all = np.empty((0,opt.tdim_use),float)
+    miss_all = np.empty((0,opt.tdim_use),float)
+    falarm_all = np.empty((0,opt.tdim_use),float)
+    m_xy_all = np.empty((0,opt.tdim_use),float)
+    m_xx_all = np.empty((0,opt.tdim_use),float)
+    m_yy_all = np.empty((0,opt.tdim_use),float)
+
+    # evaluation mode
+    model.eval()
+
+    for i_batch, sample_batched in enumerate(test_loader):
+        input = Variable(sample_batched['past']).cuda()
+        target = Variable(sample_batched['future']).cuda()
+        
+        # Forward
+        output = model(input)
+        loss = loss_fn(output, target)
+        
+        # apply evaluation metric
+        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy = StatRainfall(target.data.cpu().numpy()*201.0,
+                                                            output.data.cpu().numpy()*201.0,
+                                                            th=0.5)
+        SumSE_all = np.append(SumSE_all,SumSE,axis=0)
+        hit_all = np.append(hit_all,hit,axis=0)
+        miss_all = np.append(miss_all,miss,axis=0)
+        falarm_all = np.append(falarm_all,falarm,axis=0)
+        m_xy_all = np.append(m_xy_all,m_xy,axis=0)
+        m_xx_all = np.append(m_xx_all,m_xx,axis=0)
+        m_yy_all = np.append(m_yy_all,m_yy,axis=0)
+        
+        #if (i_batch+1) % 100 == 0:
+        if (i_batch+1) % 1 == 0:
+            print ('Test Iter [%d/%d] Loss: %.4e' 
+                   %(i_batch+1, len(test_loader.dataset)//test_loader.batch_size, loss.data[0]))
+    # logging for epoch-averaged loss
+    RMSE,CSI,FAR,POD,Cor = MetricRainfall(SumSE_all,hit_all,miss_all,falarm_all,
+                                          m_xy_all,m_xx_all,m_yy_all,axis=(0))
+    # save evaluated metric as csv file
+    tpred = (np.arange(opt.tdim_use)+1.0)*5.0 # in minutes
+    # import pdb; pdb.set_trace()
+    df = pd.DataFrame({'tpred_min':tpred,
+                       'RMSE':RMSE,
+                       'CSI':CSI,
+                       'FAR':FAR,
+                       'POD':POD,
+                       'Cor':Cor})
+    df.to_csv(convlstm,os.path.join(opt.result_path, 'test_evaluation_predtime.csv'))
+    # free gpu memory
+    del input,target,output,loss
+
+    
+
 
     

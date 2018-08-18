@@ -35,13 +35,13 @@ def MetricRainfall(SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,axis=None):
     # "axis=None" produces scalar statistics for the whole batch
     # 
     # reduce dim if specified
-    SumSE  = np.sum(SumSE,axis)
-    hit    = np.sum(hit,axis)
-    miss   = np.sum(miss,axis)
-    falarm = np.sum(miss,axis)
-    m_xy   = np.sum(m_xy,axis)
-    m_xx   = np.sum(m_xx,axis)
-    m_yy   = np.sum(m_yy,axis)
+    SumSE  = np.sum(SumSE,axis=axis)
+    hit    = np.sum(hit,axis=axis)
+    miss   = np.sum(miss,axis=axis)
+    falarm = np.sum(falarm,axis=axis)
+    m_xy   = np.sum(m_xy,axis=axis)
+    m_xx   = np.sum(m_xx,axis=axis)
+    m_yy   = np.sum(m_yy,axis=axis)
     # calc metrics based on statistics
     Nrain = hit+miss
     # Rainfall MSE

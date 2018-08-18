@@ -50,7 +50,7 @@ if __name__ == '__main__':
                                     transform=None)
 
     valid_dataset = JMARadarDataset(root_dir=opt.data_path,
-                                    csv_file=opt.train_path,
+                                    csv_file=opt.valid_path,
                                     tdim_use=opt.tdim_use,
                                     transform=None)
 
@@ -86,10 +86,24 @@ if __name__ == '__main__':
         valid_epoch(epoch,opt.n_epochs,valid_loader,convlstm,loss_fn,
                     valid_logger,opt)
 
+    # test datasets if specified
+    if opt.test:
+        # prepare loader
+        test_dataset = JMARadarDataset(root_dir=opt.data_path,
+                                        csv_file=opt.test_path,
+                                        tdim_use=opt.tdim_use,
+                                        transform=None)
+        test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
+                                                   batch_size=opt.batch_size,
+                                                   shuffle=False)
+        
+        # testing for the trained model
+        test_CLSTM_EP(test_loader,convlstm,loss_fn,opt)
+
     # output elapsed time
     logfile.write('End time: '+time.ctime()+'\n')
     tend = time.time()
-    tdiff = (tend-tstart)/3600.0
+    tdiff = float(tend-tstart)/3600.0
     logfile.write('Elapsed time[hours]: %f \n' % tdiff)
     # save the trained model
     # (1) as binary 
