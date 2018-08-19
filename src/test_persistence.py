@@ -81,7 +81,7 @@ def test_persistence(test_loader,loss_fn,test_logger,opt):
                        'FAR':FAR,
                        'POD':POD,
                        'Cor':Cor})
-    df.to_csv(convlstm,os.path.join(opt.result_path, 'test_evaluation_predtime.csv'))
+    df.to_csv(os.path.join(opt.result_path, 'test_evaluation_predtime.csv'))
 
     
 

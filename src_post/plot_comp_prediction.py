@@ -146,16 +146,18 @@ def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
                 fig, ax = plt.subplots(figsize=(20, 10))
                 fig.suptitle("Precip prediction starting at: "+fname, fontsize=20)
                 for nt in range(6):
+                #for nt in range(1,12,2):
+                    id = nt*2+1
                     pos = nt+1
-                    dtstr = str((nt+1)*5)
+                    dtstr = str((id+1)*5)
                     # target
                     plt.subplot(2,6,pos)
-                    im = plt.imshow(pic_tg[nt,:,:],vmin=0,vmax=50,cmap=cm,origin='lower')
+                    im = plt.imshow(pic_tg[id,:,:],vmin=0,vmax=50,cmap=cm,origin='lower')
                     plt.title("true:"+dtstr+"min")
                     plt.grid()
                     # predicted
                     plt.subplot(2,6,pos+6)
-                    im = plt.imshow(pic_pred[nt,:,:],vmin=0,vmax=50,cmap=cm,origin='lower')
+                    im = plt.imshow(pic_pred[id,:,:],vmin=0,vmax=50,cmap=cm,origin='lower')
                     plt.title("pred:"+dtstr+"min")
                     plt.grid()
                 fig.subplots_adjust(right=0.95)
@@ -182,12 +184,12 @@ from train_valid_epoch import *
 
 # params
 batch_size = 10
-tdim_use = 6
+tdim_use = 12
 
 data_path = '../data/data_h5/'
 filelist = '../data/valid_simple_JMARadar.csv'
-model_fname = 'result_20180814_base/trained_CLSTM.model'
-pic_path = 'result_20180814_base/png/'
+model_fname = 'result_20180818_lr0002/trained_CLSTM.model'
+pic_path = 'result_20180818_lr0002/png/'
 
 df_sampled = select_category_rainfall(data_path,filelist,batch_size,tdim_use,
                                       Nsample=10)
