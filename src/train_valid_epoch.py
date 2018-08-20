@@ -186,7 +186,7 @@ def test_CLSTM_EP(test_loader,model,loss_fn,opt):
         # apply evaluation metric
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy = StatRainfall(target.data.cpu().numpy()*201.0,
                                                             output.data.cpu().numpy()*201.0,
-                                                            th=0.5)
+                                                            th=opt.eval_threshold)
         SumSE_all = np.append(SumSE_all,SumSE,axis=0)
         hit_all = np.append(hit_all,hit,axis=0)
         miss_all = np.append(miss_all,miss,axis=0)
@@ -212,7 +212,7 @@ def test_CLSTM_EP(test_loader,model,loss_fn,opt):
                        'POD':POD,
                        'Cor':Cor})
     df.to_csv(os.path.join(opt.result_path,
-                           'test_evaluation_predtime.csv'))
+                           'test_evaluation_predtime_%.2f.csv' % opt.eval_threshold))
     # free gpu memory
     del input,target,output,loss
 

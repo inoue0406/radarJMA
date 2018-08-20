@@ -59,6 +59,11 @@ def parse_opts():
         help='If true, test is performed.')
     parser.set_defaults(test=False)
     parser.add_argument(
+        '--eval_threshold',
+        default=0.5,
+        type=float,
+        help='Threshold in [mm/h] for precipitation evaluation')
+    parser.add_argument(
         '--n_threads',
         default=4,
         type=int,
