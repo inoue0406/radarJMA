@@ -63,7 +63,9 @@ if __name__ == '__main__':
                                                    shuffle=False)
     
         # ConvLSTM Encoder Predictor
-        convlstm = CLSTM_EP(input_channels=1, hidden_channels=opt.hidden_channels,
+        #convlstm = CLSTM_EP(input_channels=1, hidden_channels=opt.hidden_channels,
+        #                    kernel_size=opt.kernel_size).cuda()
+        convlstm = CLSTM_EP2(input_channels=1, hidden_channels=opt.hidden_channels,
                             kernel_size=opt.kernel_size).cuda()
         loss_fn = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(convlstm.parameters(), lr=opt.learning_rate)

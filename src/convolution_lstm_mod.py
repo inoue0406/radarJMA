@@ -93,6 +93,51 @@ class CLSTM_EP(nn.Module):
             xout[:,it,:,:,:] = self.lastconv(hp)
         return xout
 
+class CLSTM_EP2(nn.Module):
+    # A Variant of Encoder-predictor model
+    # Predictor's output feeds in as a next input of LSTM cell
+    def __init__(self, input_channels, hidden_channels, kernel_size, bias=True):
+        # input_channels (scalar) 
+        # hidden_channels (scalar) 
+        super(CLSTM_EP2, self).__init__()
+        self.input_channels = input_channels
+        self.hidden_channels = hidden_channels
+        self.kernel_size = kernel_size
+        self.bias = bias
+        self._all_layers = []
+        # initialize encoder/predictor cell
+        cell_e = ConvLSTMCell(self.input_channels, self.hidden_channels, self.kernel_size, self.bias)
+        self.encoder = cell_e
+        self._all_layers.append(cell_e)
+        cell_p = ConvLSTMCell(self.input_channels, self.hidden_channels, self.kernel_size, self.bias)
+        self.predictor = cell_p
+        self._all_layers.append(cell_p)
+        # last conv layer for prediction
+        self.padding = int((self.kernel_size - 1) / 2)
+        self.lastconv = nn.Conv2d(self.hidden_channels, self.input_channels, self.kernel_size, 1, self.padding, bias=True)
+        
+    def forward(self, input):
+        x = input
+        bsize, tsize, channels, height, width = x.size()
+        # initialize internal state
+        (he, ce) = self.encoder.init_hidden(batch_size=bsize, hidden=self.hidden_channels, shape=(height, width))
+        (hp, cp) = self.predictor.init_hidden(batch_size=bsize, hidden=self.hidden_channels, shape=(height, width))
+        # encoding
+        for it in range(tsize):
+            # forward
+            (he, ce) = self.encoder(x[:,it,:,:,:], he, ce)
+        # copy internal state to predictor
+        hp = he
+        cp = ce
+        # predictor
+        xout_prev = x[:,(tsize-1),:,:,:] # initialize with the latest var
+        xout = Variable(torch.zeros(bsize, tsize, channels, height, width)).cuda()
+        for it in range(tsize):
+            (hp, cp) = self.predictor(xout_prev, hp, cp) # input previous timestep's xout
+            xout[:,it,:,:,:] = self.lastconv(hp)
+            xout_prev = xout[:,it,:,:,:].clone()
+        return xout
+
 #if __name__ == '__main__':
 
     # gradient check
