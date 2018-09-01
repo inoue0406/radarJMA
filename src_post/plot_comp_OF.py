@@ -25,43 +25,15 @@ sys.path.append(path)
 
 from jma_pytorch_dataset import *
 from test_OFpred import *
+from colormap_JMA import Colormap_JMA
 
-def Colormap_JMA(n_bin=50):
-    # custom colormap for rainfall
-    # after JMA
-    # https://www.jma.go.jp/jma/kishou/info/colorguide/120524_hpcolorguide.pdf
-    # Colormap2
-    cdict = {'red':   [(0,0.95,0.95),
-                       (0.01,0.95,0.63),
-                       (0.05,0.63,0.13),
-                       (0.1,0.13,0),
-                       (0.2,0,0.98),
-                       (0.3,0.98,1),
-                       (0.5,1,1),
-                       (0.8,1,0.71),
-                       (1,0.71,0.71)],
-             'green': [(0,0.95,0.95),
-                       (0.01,0.95,0.82),
-                       (0.05,0.82,0.55),
-                       (0.1,0.55,0.25),
-                       (0.2,0.25,0.96),
-                       (0.3,0.96,0.6),
-                       (0.5,0.6,0.16),
-                       (0.8,0.16,0),
-                       (1,0,0)],
-             'blue':  [(0,1,1),
-                       (0.01,1,1),
-                       (0.05,1,1),
-                       (0.1,1,1),
-                       (0.2,1,0),
-                       (0.3,0,0),
-                       (0.5,0,0),
-                       (0.8,0,0.41),
-                       (1,0.41,0.41)]}
-    
-    cmap_name="precip"
-    cm = LinearSegmentedColormap(cmap_name, cdict, N=n_bin)
-    return(cm)
+def mod_str_interval(inte_str):
+    # a tweak for decent filename 
+    inte_str = inte_str.replace('(','')
+    inte_str = inte_str.replace(']','')
+    inte_str = inte_str.replace(',','')
+    inte_str = inte_str.replace(' ','_')
+    return(inte_str)
 
 # plot comparison of predicted vs ground truth
 def plot_comp_prediction(data_path,filelist,batch_size,tdim_use,
@@ -131,11 +103,7 @@ def plot_comp_prediction(data_path,filelist,batch_size,tdim_use,
             # save as png
             i = df_sampled.index[df_sampled['fname']==fname]
             i = int(i.values)
-            interval = df_sampled['rcategory'].iloc[i]
-            interval = interval.replace('(','')
-            interval = interval.replace(']','')
-            interval = interval.replace(',','')
-            interval = interval.replace(' ','_')
+            interval = mod_str_interval(df_sampled['rcategory'].iloc[i])
             plt.savefig(pic_path+'comp_pred_'+interval+fname+'.png')
             plt.close()
 #                if mode == 'png_parts': # output as step-by step png
