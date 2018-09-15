@@ -4,9 +4,10 @@
 #
 import torch
 import torchvision
-import numpy as np
 import torch.utils.data as data
+from torch.autograd import Variable
 
+import numpy as np
 import pandas as pd
 import h5py
 import os
@@ -20,12 +21,17 @@ import matplotlib.animation as animation
 
 # -----------------------------
 # add "src" as import path
-path = os.path.join('/home/tsuyoshi/radarJMA/src')
+path = os.path.join('../src')
 sys.path.append(path)
 
 from jma_pytorch_dataset import *
-from test_OFpred import *
 from colormap_JMA import Colormap_JMA
+
+# add rainymotion source dir
+path = os.path.join('../../rainymotion')
+sys.path.append(path)
+from rainymotion.models import *
+from rainymotion.utils import *
 
 def mod_str_interval(inte_str):
     # a tweak for decent filename 
@@ -61,7 +67,17 @@ def plot_comp_prediction(data_path,filelist,batch_size,tdim_use,
     # prediction by optical flow
     output = target.clone()
     for n in range(input.data.shape[0]):
-        output.data[n,:,0,:,:] = OF_predictor(input.data[n,:,0,:,:])
+        # prediction by rainymotion
+        # initialize the model
+        model = Dense()
+        data_scaled,c1,c2 = RYScaler(input.data[n,:,0,:,:].numpy())
+        # upload data to the model instance
+        model.input_data = data_scaled
+        # run the model with default parameters
+        nowcast = model.run()
+        # inverse scaling
+        nowcast_orig = inv_RYScaler(nowcast,c1,c2)
+        output.data[n,:,0,:,:] = torch.from_numpy(nowcast_orig)
     #
     fnames = sample_batched['fnames_future']
     # Output only selected data in df_sampled
