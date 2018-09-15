@@ -134,15 +134,6 @@ def plot_comp_prediction(data_path,filelist,batch_size,tdim_use,
                 nt_str = '_dt%02d' % nt
                 plt.savefig(pic_path+'comp_pred_'+interval+fname+nt_str+'.png')
                 plt.close()
-#                if mode == 'png_parts': # output as step-by step png
-#                    fig = plt.figure()
-#                    ims = []
-#                    for i in range(12):
-#                        print(i)
-#                        im = plt.imshow(x_train[i,:,:],origin='lower',animated=True)
-#                        ims.append([im])                  # グラフを配列 ims に追加
-#                    ani = animation.ArtistAnimation(fig, ims, interval=100)
-#                    plt.show() 
     del input,target,output
 
 if __name__ == '__main__':
