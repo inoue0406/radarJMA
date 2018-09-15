@@ -175,7 +175,7 @@ def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
 
 # -----------------------------
 # add "src" as import path
-path = os.path.join('/home/tsuyoshi/radarJMA/src')
+path = os.path.join('../src')
 sys.path.append(path)
 
 from jma_pytorch_dataset import *

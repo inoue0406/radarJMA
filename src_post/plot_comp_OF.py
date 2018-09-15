@@ -20,7 +20,7 @@ import matplotlib.animation as animation
 
 # -----------------------------
 # add "src" as import path
-path = os.path.join('/home/tsuyoshi/radarJMA/src')
+path = os.path.join('../src')
 sys.path.append(path)
 
 from jma_pytorch_dataset import *
