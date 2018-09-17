@@ -11,7 +11,7 @@ from criteria_precip import *
 
 # testing for "Persistence" forecast 
             
-def test_persistence(test_loader,loss_fn,test_logger,opt):
+def test_persistence(test_loader,loss_fn,test_logger,opt,reg):
     print('Test for persistence forecast')
     
     losses = AverageMeter()
@@ -26,8 +26,8 @@ def test_persistence(test_loader,loss_fn,test_logger,opt):
     m_yy_all = np.empty((0,opt.tdim_use),float)
 
     for i_batch, sample_batched in enumerate(test_loader):
-        input = Variable(sample_batched['past']).cpu()
-        target = Variable(sample_batched['future']).cpu()
+        input = Variable(reg.fwd(sample_batched['past'])).cpu()
+        target = Variable(reg.fwd(sample_batched['future'])).cpu()
         
         # Prediction by Persistence
         output = target.clone()
@@ -44,8 +44,8 @@ def test_persistence(test_loader,loss_fn,test_logger,opt):
         losses.update(loss.data[0], input.size(0))
         
         # apply evaluation metric
-        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy = StatRainfall(target.data.cpu().numpy()*201.0,
-                                                            output.data.cpu().numpy()*201.0,
+        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy = StatRainfall(reg.inv(target.data.cpu().numpy()),
+                                                            reg.inv(output.data.cpu().numpy()),
                                                             th=0.5)
         SumSE_all = np.append(SumSE_all,SumSE,axis=0)
         hit_all = np.append(hit_all,hit,axis=0)

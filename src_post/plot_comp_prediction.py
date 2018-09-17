@@ -22,6 +22,7 @@ path = os.path.join('../src')
 sys.path.append(path)
 
 from jma_pytorch_dataset import *
+from regularizer import *
 from convolution_lstm_mod import *
 from train_valid_epoch import *
 from colormap_JMA import Colormap_JMA
@@ -36,7 +37,7 @@ def mod_str_interval(inte_str):
 
 # plot comparison of predicted vs ground truth
 def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
-                         df_sampled,pic_path,mode='png_whole'):
+                         df_sampled,pic_path,reg,mode='png_whole'):
     # create pic save dir
     if not os.path.exists(pic_path):
         os.mkdir(pic_path)
@@ -59,15 +60,11 @@ def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
     #
     for i_batch, sample_batched in enumerate(valid_loader):
         # apply the trained model to the data
-        input = Variable(sample_batched['past']).cuda()
-        target = Variable(sample_batched['future']).cuda()
+        input = Variable(reg.fwd(sample_batched['past'])).cuda()
+        target = Variable(reg.fwd(sample_batched['future'])).cuda()
         #input = Variable(sample_batched['past']).cpu()
         #target = Variable(sample_batched['future']).cpu()
         output = convlstm(input)
-        # scale to original
-        input = input*201.0
-        target = target*201.0
-        output = output*201.0
         #
         fnames = sample_batched['fnames_future']
         # Output only selected data in df_sampled
@@ -77,9 +74,9 @@ def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
                 continue
             # convert to cpu
             pic = target[n,:,0,:,:].cpu()
-            pic_tg = pic.data.numpy()
+            pic_tg = reg.inv(pic.data.numpy())
             pic = output[n,:,0,:,:].cpu()
-            pic_pred = pic.data.numpy()
+            pic_pred = reg.inv(pic.data.numpy())
             # print
             print('Plotting: ',fname,np.max(pic_tg),np.max(pic_pred))
             # plot
@@ -154,6 +151,14 @@ if __name__ == '__main__':
     model_fname = 'result_20180818_lr0002/trained_CLSTM.model'
     pic_path = 'result_20180818_lr0002/png/'
 
+    scaling = 'log'
+    
+    # prepare regularizer for data
+    if opt.data_scaling == 'linear':
+        reg = LinearRegularizer()
+    elif opt.data_scaling == 'log':
+        reg = LogRegularizer()
+
     # samples to be plotted
     sample_path = '../data/sampled_forplot_JMARadar.csv'
 
@@ -163,6 +168,6 @@ if __name__ == '__main__':
     print(df_sampled)
     
     plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
-                         df_sampled,pic_path,mode='png_ind')
-#import pdb;pdb.set_trace()
+                         df_sampled,pic_path,reg,mode='png_ind')
+
 

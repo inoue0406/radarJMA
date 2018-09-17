@@ -1,6 +1,6 @@
 #
 # Plot Predicted Rainfall Data
-# Using Optical Flow
+# Using rainymotion optical-flow based method
 #
 import torch
 import torchvision
@@ -25,6 +25,7 @@ path = os.path.join('../src')
 sys.path.append(path)
 
 from jma_pytorch_dataset import *
+from test_RMpred import *
 from colormap_JMA import Colormap_JMA
 
 # add rainymotion source dir
@@ -61,24 +62,16 @@ def plot_comp_prediction(data_path,filelist,batch_size,tdim_use,
     indices = df_sampled['index'].values
     sample_batched = data.dataloader.default_collate([valid_dataset[i] for i in indices])
 
-    # apply the trained model to the data
+    # apply the model to the data
     input = Variable(sample_batched['past']).cpu()
     target = Variable(sample_batched['future']).cpu()
     # prediction by optical flow
     output = target.clone()
     for n in range(input.data.shape[0]):
         # prediction by rainymotion
-        # initialize the model
-        model = Dense()
-        data_scaled,c1,c2 = RYScaler(input.data[n,:,0,:,:].numpy())
-        # upload data to the model instance
-        model.input_data = data_scaled
-        # run the model with default parameters
-        nowcast = model.run()
-        # inverse scaling
-        nowcast_orig = inv_RYScaler(nowcast,c1,c2)
+        nowcast_orig = RM_predictor(input.data[n,:,0,:,:].numpy(),tdim_use)
         output.data[n,:,0,:,:] = torch.from_numpy(nowcast_orig)
-    #
+
     fnames = sample_batched['fnames_future']
     # Output only selected data in df_sampled
     for n,fname in enumerate(fnames):
@@ -150,15 +143,6 @@ def plot_comp_prediction(data_path,filelist,batch_size,tdim_use,
                 nt_str = '_dt%02d' % nt
                 plt.savefig(pic_path+'comp_pred_'+interval+fname+nt_str+'.png')
                 plt.close()
-#                if mode == 'png_parts': # output as step-by step png
-#                    fig = plt.figure()
-#                    ims = []
-#                    for i in range(12):
-#                        print(i)
-#                        im = plt.imshow(x_train[i,:,:],origin='lower',animated=True)
-#                        ims.append([im])                  # グラフを配列 ims に追加
-#                    ani = animation.ArtistAnimation(fig, ims, interval=100)
-#                    plt.show() 
     del input,target,output
 
 if __name__ == '__main__':
@@ -178,9 +162,5 @@ if __name__ == '__main__':
     print('samples to be plotted')
     print(df_sampled)
     
-    #plot_comp_prediction(data_path,filelist,batch_size,tdim_use,
-    #                     df_sampled,pic_path,mode='png_whole')
     plot_comp_prediction(data_path,filelist,batch_size,tdim_use,
                          df_sampled,pic_path,mode='png_ind')
-    #import pdb;pdb.set_trace()
-
