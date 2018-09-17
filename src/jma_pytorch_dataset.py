@@ -30,11 +30,10 @@ class JMARadarDataset(data.Dataset):
         return len(self.df_fnames)
         
     def __getitem__(self, index):
-        rmax = 201.0 # max rainfall intensity
         # read X
         h5_name_X = os.path.join(self.root_dir, self.df_fnames.ix[index, 'fname'])
         h5file = h5py.File(h5_name_X,'r')
-        rain_X = h5file['R'].value/rmax
+        rain_X = h5file['R'].value
         rain_X = np.maximum(rain_X,0.0) # replace negative value with 0
         #rain_X = rain_X[:,None,:,:] # add "channel" dimension as 1
         rain_X = rain_X[-self.tdim_use:,None,:,:] # add "channel" dimension as 1
@@ -42,7 +41,7 @@ class JMARadarDataset(data.Dataset):
         # read Y
         h5_name_Y = os.path.join(self.root_dir, self.df_fnames.ix[index, 'fnext'])
         h5file = h5py.File(h5_name_Y,'r')
-        rain_Y = h5file['R'].value/rmax
+        rain_Y = h5file['R'].value
         rain_Y = np.maximum(rain_Y,0.0) # replace negative value with 0
         rain_Y = rain_Y[:self.tdim_use,None,:,:] # add "channel" dimension as 1
         h5file.close()
@@ -56,73 +55,3 @@ class JMARadarDataset(data.Dataset):
             sample = self.transform(sample)
 
         return sample
-
-class RegRain():
-    # class for regularization of rainfall values
-    def __init__(self):
-        # coeff for intensity -> reflecivity
-        self.a = 256.0
-        self.b = 1.42
-        self.rmax = 201.0 # max rainfall intensity
-        self.c1 = 0.0
-        self.c2 = self.rfl2dbz(self.mmh2rfl(self.rmax))
-        
-    # conversion between mm/h <-> reflectivity
-    def mmh2rfl(self, r, a=256., b=1.42):
-        return a * r ** b
-    def rfl2mmh(self, z, a=256., b=1.42):
-        return (z / a) ** (1. / b)
-    # conversion between reflectivity <-> magnitude
-    def rfl2dbz(self, z):
-        return 10. * np.log10(z)
-    def dbz2rfl(self, d):
-        return 10. ** (d / 10.)
-
-    def fwd(self,X):
-        # forward transformation
-        # input X: numpy array
-        #          rainfall intensity with 0-201[mm/h] value range
-        X_rfl = self.mmh2rfl(X) # intensity to reflectivity
-        X_rfl[X_rfl < 0.1] = 0.1
-        X_dbz = self.rfl2dbz(X_rfl) # reflectivity to dBz
-        Xscl = ((X_dbz-self.c1)/(self.c2-self.c1)) # output regularized to [0-1]
-        return Xscl
-
-    def inv(self,X_scl):
-        # inverse transformation
-        # input X_scl: numpy array
-        #          scaled intensity with 0-1 value range
-        X_rfl = self.dbz2rfl((X_scl)*(self.c2 - self.c1) + self.c1)
-        X_mmh = self.rfl2mmh(X_rfl)
-        # interpret "small enough" value as zero
-        X_mmh[X_rfl <= 0.1] = 0.0
-        return X_mmh
-    
-if __name__ == '__main__':
-    # test for regularization class
-    reg = RegRain()
-    print('test for ordinary values')
-    X = np.array([0.0])
-    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
-    X = np.array([0.001])
-    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
-    X = np.array([0.01])
-    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
-    X = np.array([0.1])
-    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
-    X = np.array([1.0])
-    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
-    X = np.array([10.0])
-    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
-    X = np.array([201.0])
-    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
-    
-    print('test for irregular values')
-    X = np.array([-1.0])
-    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
-    X = np.array([250.0])
-    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
-    # import pdb; pdb.set_trace()
-    
-    
-

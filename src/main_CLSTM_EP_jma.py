@@ -14,6 +14,7 @@ import time
 import pdb
 
 from jma_pytorch_dataset import *
+from regularizer import *
 from convolution_lstm_mod import *
 from train_valid_epoch import *
 from utils import Logger
@@ -41,6 +42,12 @@ if __name__ == '__main__':
     logfile = open(os.path.join(opt.result_path, 'log_run.txt'),'w')
     logfile.write('Start time:'+time.ctime()+'\n')
     tstart = time.time()
+
+    # prepare regularizer for data
+    if opt.data_scaling == 'linear':
+        reg = LinearRegularizer()
+    elif opt.data_scaling == 'log':
+        reg = LogRegularizer()
         
     if not opt.no_train:
         # loading datasets
@@ -84,9 +91,9 @@ if __name__ == '__main__':
         # training 
         for epoch in range(opt.n_epochs):
             train_epoch(epoch,opt.n_epochs,train_loader,convlstm,loss_fn,optimizer,
-                        train_logger,train_batch_logger,opt)
+                        train_logger,train_batch_logger,opt,reg)
             valid_epoch(epoch,opt.n_epochs,valid_loader,convlstm,loss_fn,
-                        valid_logger,opt)
+                        valid_logger,opt,reg)
 
         # save the trained model
         # (1) as binary 
@@ -114,7 +121,7 @@ if __name__ == '__main__':
                                                    shuffle=False)
         
         # testing for the trained model
-        test_CLSTM_EP(test_loader,convlstm,loss_fn,opt)
+        test_CLSTM_EP(test_loader,convlstm,loss_fn,opt,reg)
 
     # output elapsed time
     logfile.write('End time: '+time.ctime()+'\n')

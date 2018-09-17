@@ -5,6 +5,7 @@ import torch.utils.data as data
 import torchvision.transforms as transforms
 
 from jma_pytorch_dataset import *
+from regularizer import *
 from convolution_lstm_mod import *
 from utils import AverageMeter, Logger
 from criteria_precip import *
@@ -15,12 +16,12 @@ from criteria_precip import *
 # Training
 # --------------------------
 
-def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logger,train_batch_logger,opt):
+def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logger,train_batch_logger,opt,reg):
     
     print('train at epoch {}'.format(epoch+1))
 
     losses = AverageMeter()
-
+    
     # initialize
     SumSE_all = np.empty((0,opt.tdim_use),float)
     hit_all = np.empty((0,opt.tdim_use),float)
@@ -33,8 +34,8 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
     for i_batch, sample_batched in enumerate(train_loader):
         #print(i_batch, sample_batched['past'].size(),
         #    sample_batched['future'].size())
-        input = Variable(sample_batched['past']).cuda()
-        target = Variable(sample_batched['future']).cuda()
+        input = Variable(reg.fwd(sample_batched['past'])).cuda()
+        target = Variable(reg.fwd(sample_batched['future'])).cuda()
         
         # Forward + Backward + Optimize
         optimizer.zero_grad()
@@ -45,8 +46,8 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
         # for logging
         losses.update(loss.data[0], input.size(0))
         # apply evaluation metric
-        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy = StatRainfall(target.data.cpu().numpy()*201.0,
-                                                            output.data.cpu().numpy()*201.0,
+        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy = StatRainfall(reg.inv(target.data.cpu().numpy()),
+                                                            reg.inv(output.data.cpu().numpy()),
                                                             th=0.5)
         RMSE,CSI,FAR,POD,Cor = MetricRainfall(SumSE,hit,miss,falarm,
                                               m_xy,m_xx,m_yy,axis=None)
@@ -95,11 +96,11 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
 # Validation
 # --------------------------
 
-def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt):
+def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt,reg):
     print('validation at epoch {}'.format(epoch+1))
     
     losses = AverageMeter()
-    
+        
     # initialize
     SumSE_all = np.empty((0,opt.tdim_use),float)
     hit_all = np.empty((0,opt.tdim_use),float)
@@ -113,8 +114,8 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt):
     model.eval()
 
     for i_batch, sample_batched in enumerate(valid_loader):
-        input = Variable(sample_batched['past']).cuda()
-        target = Variable(sample_batched['future']).cuda()
+        input = Variable(reg.fwd(sample_batched['past'])).cuda()
+        target = Variable(reg.fwd(sample_batched['future'])).cuda()
         
         # Forward
         output = model(input)
@@ -124,8 +125,8 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt):
         losses.update(loss.data[0], input.size(0))
         
         # apply evaluation metric
-        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy = StatRainfall(target.data.cpu().numpy()*201.0,
-                                                            output.data.cpu().numpy()*201.0,
+        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy = StatRainfall(reg.inv(target.data.cpu().numpy()),
+                                                            reg.inv(output.data.cpu().numpy()),
                                                             th=0.5)
         SumSE_all = np.append(SumSE_all,SumSE,axis=0)
         hit_all = np.append(hit_all,hit,axis=0)
@@ -160,7 +161,7 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt):
 # Test
 # --------------------------
 
-def test_CLSTM_EP(test_loader,model,loss_fn,opt):
+def test_CLSTM_EP(test_loader,model,loss_fn,opt,reg):
     print('Testing for the model')
     
     # initialize
@@ -176,16 +177,16 @@ def test_CLSTM_EP(test_loader,model,loss_fn,opt):
     model.eval()
 
     for i_batch, sample_batched in enumerate(test_loader):
-        input = Variable(sample_batched['past']).cuda()
-        target = Variable(sample_batched['future']).cuda()
+        input = Variable(reg.fwd(sample_batched['past'])).cuda()
+        target = Variable(reg.fwd(sample_batched['future'])).cuda()
         
         # Forward
         output = model(input)
         loss = loss_fn(output, target)
         
         # apply evaluation metric
-        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy = StatRainfall(target.data.cpu().numpy()*201.0,
-                                                            output.data.cpu().numpy()*201.0,
+        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy = StatRainfall(reg.inv(target.data.cpu().numpy()),
+                                                            reg.inv(output.data.cpu().numpy()),
                                                             th=opt.eval_threshold)
         SumSE_all = np.append(SumSE_all,SumSE,axis=0)
         hit_all = np.append(hit_all,hit,axis=0)

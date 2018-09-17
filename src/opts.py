@@ -7,6 +7,11 @@ def parse_opts():
         type=str,
         help='directory path of data')
     parser.add_argument(
+        '--data_scaling',
+        default='linear',
+        type=str,
+        help='scaling of data: linear or log')
+    parser.add_argument(
         '--train_path',
         type=str,
         help='training filelist(csv) path')
