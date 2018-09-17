@@ -76,6 +76,10 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
         if (i_batch+1) % 1 == 0:
             print ('Train Epoch [%d/%d], Iter [%d/%d] Loss: %.4e' 
                    %(epoch+1, num_epochs, i_batch+1, len(train_loader.dataset)//train_loader.batch_size, loss.data[0]))
+
+    # update lr for optimizer
+    optimizer.step()
+    
     # logging for epoch-averaged loss
     RMSE,CSI,FAR,POD,Cor = MetricRainfall(SumSE_all,hit_all,miss_all,falarm_all,
                                           m_xy_all,m_xx_all,m_yy_all,axis=None)

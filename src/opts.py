@@ -34,6 +34,10 @@ def parse_opts():
         type=int,
         help='Temporal duration to be used')
     parser.add_argument(
+        '--optimizer',
+        type=str,
+        help='Optimizer type adam or rmsprop')
+    parser.add_argument(
         '--learning_rate',
         default=0.01,
         type=float,
