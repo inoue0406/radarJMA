@@ -21,14 +21,8 @@ from utils import Logger
 from opts import parse_opts
 
 if __name__ == '__main__':
-    # params for the training
-    #batch_size = 100
-    #num_epochs = 10
-    #batch_size = 10
-    #learning_rate = 0.01
-    #tdim_use = 6
    
-    # parse options
+    # parse command-line options
     opt = parse_opts()
     print(opt)
     # create result dir
@@ -72,6 +66,8 @@ if __name__ == '__main__':
         # ConvLSTM Encoder Predictor
         convlstm = CLSTM_EP(input_channels=1, hidden_channels=opt.hidden_channels,
                             kernel_size=opt.kernel_size).cuda()
+        
+        # "feed-in" type of predictor
         #convlstm = CLSTM_EP2(input_channels=1, hidden_channels=opt.hidden_channels,
         #                    kernel_size=opt.kernel_size).cuda()
         loss_fn = torch.nn.MSELoss()

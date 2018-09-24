@@ -60,7 +60,7 @@ class LinearRegularizer():
         # inverse transformation
         # input X_scl: numpy array
         #          scaled intensity with 0-1 value range
-        return X_scl*201.0
+        return X_scl*self.rmax
     
 if __name__ == '__main__':
     # test for regularization class
@@ -113,5 +113,5 @@ if __name__ == '__main__':
     print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
     X = np.array([250.0])
     print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
-    # import pdb; pdb.set_trace()
+
 
