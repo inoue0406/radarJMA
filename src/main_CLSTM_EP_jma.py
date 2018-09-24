@@ -78,6 +78,9 @@ if __name__ == '__main__':
         elif opt.optimizer == 'rmsprop':
             optimizer = torch.optim.RMSprop(convlstm.parameters(), lr=opt.learning_rate)
             
+        # learning rate scheduler
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=opt.lr_decay)
+            
         # Prep logger
         train_logger = Logger(
             os.path.join(opt.result_path, 'train.log'),
@@ -91,6 +94,9 @@ if __name__ == '__main__':
     
         # training 
         for epoch in range(opt.n_epochs):
+            # step scheduler
+            scheduler.step()
+            # training & validation
             train_epoch(epoch,opt.n_epochs,train_loader,convlstm,loss_fn,optimizer,
                         train_logger,train_batch_logger,opt,reg)
             valid_epoch(epoch,opt.n_epochs,valid_loader,convlstm,loss_fn,

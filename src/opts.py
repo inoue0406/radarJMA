@@ -43,6 +43,11 @@ def parse_opts():
         type=float,
         help='Learning rate')
     parser.add_argument(
+        '--lr_decay',
+        default=1.0,
+        type=float,
+        help='Learning rate decay')
+    parser.add_argument(
         '--batch_size',
         default=10,
         type=int,
