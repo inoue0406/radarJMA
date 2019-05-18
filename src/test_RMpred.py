@@ -73,12 +73,12 @@ def test_RMpred(test_loader,loss_fn,test_logger,opt):
         loss = loss_fn(output, target)
 
         # for logging
-        losses.update(loss.data[0], input.size(0))
+        losses.update(loss.item(), input.size(0))
         
         # apply evaluation metric
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy = StatRainfall(target.data.cpu().numpy(),
                                                             output.data.cpu().numpy(),
-                                                            th=0.5)
+                                                            th=opt.eval_threshold)
         SumSE_all = np.append(SumSE_all,SumSE,axis=0)
         hit_all = np.append(hit_all,hit,axis=0)
         miss_all = np.append(miss_all,miss,axis=0)
@@ -90,7 +90,7 @@ def test_RMpred(test_loader,loss_fn,test_logger,opt):
         #if (i_batch+1) % 100 == 0:
         if (i_batch+1) % 1 == 0:
             print ('Testing, Iter [%d/%d] Loss: %.4e' 
-                   %(i_batch+1, len(test_loader.dataset)//test_loader.batch_size, loss.data[0]))
+                   %(i_batch+1, len(test_loader.dataset)//test_loader.batch_size, loss.item()))
     # logging for averaged loss
     RMSE,CSI,FAR,POD,Cor = MetricRainfall(SumSE_all,hit_all,miss_all,falarm_all,
                                           m_xy_all,m_xx_all,m_yy_all,axis=None)
