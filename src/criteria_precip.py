@@ -5,6 +5,23 @@
 import numpy as np
 import pdb
 
+from fss import *
+
+# Calc FSS
+def FSS_for_tensor(Xtrue,Xmodel,th=0.5,win=2):
+    N = Xtrue.shape[0]
+    T = Xtrue.shape[1]
+    # initialize
+    FSS_tensor = np.zeros([N,T])
+    # loop through sample size and time
+    for n in range(N):
+        for t in range(T):
+            num,denom,fss = calcFSS(Xtrue[n,t,0,:,:],Xmodel[n,t,0,:,:],
+                                    threshold=th,window=win)
+            FSS_tensor[n,t]=fss
+        
+    return FSS_tensor
+
 # Various statistics for evaluation of rainfall
 def StatRainfall(Xtrue,Xmodel,th=0.5):
     # count only if rainfall is present
@@ -23,14 +40,17 @@ def StatRainfall(Xtrue,Xmodel,th=0.5):
     hit    = np.sum(flg_tr * flg_mo     ,axis=(2,3,4))
     miss   = np.sum(flg_tr * (1-flg_mo) ,axis=(2,3,4))
     falarm = np.sum((1-flg_tr) * flg_mo ,axis=(2,3,4))
-    # ----------------------1
+    # ----------------------
     # calc moments for correlation
     m_xy     = np.sum(Xtrue*Xmodel ,axis=(2,3,4))
     m_xx     = np.sum(Xtrue*Xtrue  ,axis=(2,3,4))
     m_yy     = np.sum(Xmodel*Xmodel,axis=(2,3,4))
-    return(SumSE,hit,miss,falarm,m_xy,m_xx,m_yy)
+    # ----------------------
+    # calc Max Rainfall Squared Error
+    MaxSE   = np.power(np.max(Xtrue,axis=(2,3,4)) - np.max(Xmodel,axis=(2,3,4)),2)
+    return(SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE)
 
-def MetricRainfall(SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,axis=None):
+def MetricRainfall(SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE,FSS_t,axis=None):
     # "axis=(0,1)" produces stat of [sample x time] dim
     # "axis=None" produces scalar statistics for the whole batch
     # 
@@ -42,6 +62,8 @@ def MetricRainfall(SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,axis=None):
     m_xy   = np.sum(m_xy,axis=axis)
     m_xx   = np.sum(m_xx,axis=axis)
     m_yy   = np.sum(m_yy,axis=axis)
+    MaxMSE  = np.mean(MaxSE,axis=axis)
+    FSS_mean = np.nanmean(FSS_t,axis=axis) # avoid NA values when collecting 
     # calc metrics based on statistics
     Nrain = hit+miss
     # Rainfall MSE
@@ -66,7 +88,7 @@ def MetricRainfall(SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,axis=None):
     # calc Cor
     eps = 0.0001 # small
     Cor = m_xy/(np.sqrt(m_xx*m_yy)+eps)
-    return(RMSE,CSI,FAR,POD,Cor)
+    return(RMSE,CSI,FAR,POD,Cor,MaxMSE,FSS_mean)
 
 # Rainfall MSE
 def RainfallMSE(Xtrue,Xmodel,th=0.5):
@@ -156,18 +178,29 @@ if __name__ == '__main__':
     
     Xtrue = np.abs(Xtrue)*0.60
     Xmodel = Xtrue + Xmodel*0.2
-    
-    #MSE = RainfallMSE(Xtrue,Xmodel)
-    #CSI = CSI(Xtrue,Xmodel)
-    #FAR = FAR(Xtrue,Xmodel)
-    #POD = POD(Xtrue,Xmodel)
-    #Cor = Correlation(Xtrue,Xmodel)
-    
+    #Xmodel = Xtrue
+        
     #SumSE,hit,miss,falarm,m_xy,m_xx,m_yy = StatRainfall(Xtrue,Xmodel,th=0.5)
     
-    SumSE,hit,miss,falarm,m_xy,m_xx,m_yy = StatRainfall(Xtrue,Xmodel,th=0.5)
-    RMSE,CSI,FAR,POD,Cor = MetricRainfall(SumSE,hit,miss,falarm,m_xy,m_xx,m_yy)
+    SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,th=0.5)
+    FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=0.5)
     
+    RMSE,CSI,FAR,POD,Cor,MaxMSE,FSS_mean = MetricRainfall(SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE,FSS_t)
+
     pdb.set_trace()
-
-
+    
+    FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=0.5)
+    print('FSS threshold=0.5')
+    print(FSS_t)
+    FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=1.0)
+    print('FSS threshold=1.0')
+    print(FSS_t)
+    FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=2.0)
+    print('FSS threshold=2.0')
+    print(FSS_t)
+    FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=0.5,win=4)
+    print('FSS win=4')
+    print(FSS_t)
+    FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=0.5,win=6)
+    print('FSS win=6')
+    print(FSS_t)
