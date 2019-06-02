@@ -85,6 +85,7 @@ def test_RMpred(test_loader,loss_fn,test_logger,opt):
                                                             output.data.cpu().numpy(),
                                                             th=opt.eval_threshold)
         FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold,win=10)
+        
         SumSE_all = np.append(SumSE_all,SumSE,axis=0)
         hit_all = np.append(hit_all,hit,axis=0)
         miss_all = np.append(miss_all,miss,axis=0)
@@ -111,8 +112,7 @@ def test_RMpred(test_loader,loss_fn,test_logger,opt):
         'POD': POD,
         'Cor': Cor,
         'MaxMSE': MaxMSE,
-        'FSS_mean': FSS_mean,
-        })
+        'FSS_mean': FSS_mean})
 
     # logging for loss by time
     RMSE,CSI,FAR,POD,Cor,MaxMSE,FSS_mean = MetricRainfall(SumSE_all,hit_all,miss_all,falarm_all,
@@ -128,8 +128,7 @@ def test_RMpred(test_loader,loss_fn,test_logger,opt):
                        'POD':POD,
                        'Cor':Cor,
                        'MaxMSE': MaxMSE,
-                       'FSS_mean': FSS_mean,
-                       })
+                       'FSS_mean': FSS_mean})
     df.to_csv(os.path.join(opt.result_path, 'test_evaluation_predtime.csv'))
 
 
