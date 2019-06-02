@@ -36,7 +36,7 @@ def RM_predictor(data_past,tdim_use):
     # scale by log transform
     data_scaled,c1,c2 = RYScaler(data_past)
     c2 = max(c2,1.0) # c2 should be larger than 1.0
-    print('scaling params:',c1,c2)
+    #print('scaling params:',c1,c2)
     # upload data to the model instance
     model.input_data = data_scaled
     # run the model with default parameters
@@ -70,6 +70,7 @@ def test_RMpred(test_loader,loss_fn,test_logger,opt):
         # Prediction by Persistence
         output = target.clone()
         for n in range(input.data.shape[0]):
+            print('past file name:',n,sample_batched['fnames_past'][n])
             output.data[n,:,0,:,:] = torch.from_numpy(RM_predictor(input.data.numpy()[n,:,0,:,:],opt.tdim_use))
             
         loss = loss_fn(output, target)
@@ -80,7 +81,7 @@ def test_RMpred(test_loader,loss_fn,test_logger,opt):
         # apply evaluation metric
         Xtrue = target.data.cpu().numpy()
         Xmodel = output.data.cpu().numpy()
-        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy = StatRainfall(target.data.cpu().numpy(),
+        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(target.data.cpu().numpy(),
                                                             output.data.cpu().numpy(),
                                                             th=opt.eval_threshold)
         FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold,win=10)

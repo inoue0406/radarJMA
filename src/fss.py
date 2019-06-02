@@ -111,7 +111,14 @@ def calcFSS(fcst, obs, threshold, window, fcst_cache=None, obs_cache=None):
     num = np.nanmean(np.power(fhat - ohat, 2))
     denom = np.nanmean(np.power(fhat, 2) + np.power(ohat, 2))
     
-    return num, denom, 1.-num/denom
+    #print('in calcFSS num,denom=',num,denom)
+    eps = 1.0e-6
+    if(denom < eps):
+        # if denom is small, return NaN
+        fss = np.nan
+    else:
+        fss = 1.-num/denom
+    return num, denom, fss
 
 
 if __name__ == '__main__':

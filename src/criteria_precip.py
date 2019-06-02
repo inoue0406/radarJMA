@@ -18,6 +18,7 @@ def FSS_for_tensor(Xtrue,Xmodel,th=0.5,win=2):
         for t in range(T):
             num,denom,fss = calcFSS(Xtrue[n,t,0,:,:],Xmodel[n,t,0,:,:],
                                     threshold=th,window=win)
+            #print('n,t,fss=',n,t,fss)
             FSS_tensor[n,t]=fss
         
     return FSS_tensor
