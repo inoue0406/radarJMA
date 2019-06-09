@@ -78,6 +78,8 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
             'FAR': FAR,
             'POD': POD,
             'Cor': Cor, 
+            'MaxMSE': MaxMSE,
+            'FSS_mean': FSS_mean,
             'lr': optimizer.param_groups[0]['lr']
         })
         # 

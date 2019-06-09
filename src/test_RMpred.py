@@ -1,6 +1,6 @@
+import numpy as np
 import torch 
 import torchvision
-import numpy as np
 import torch.utils.data as data
 import torchvision.transforms as transforms
 from torch.autograd import Variable
@@ -15,7 +15,8 @@ import sys
 # optical flow forecast with RainyMotion
 
 # add rainymotion source dir
-path = os.path.join('../../rainymotion')
+#path = os.path.join('../../rainymotion')
+path = os.path.join('../../rainymotion_nw')
 sys.path.append(path)
 from rainymotion.models import *
 from rainymotion.utils import *
@@ -62,6 +63,8 @@ def test_RMpred(test_loader,loss_fn,test_logger,opt):
     FSS_t_all = np.empty((0,opt.tdim_use),float)
 
     for i_batch, sample_batched in enumerate(test_loader):
+        #if i_batch < 51:
+        #    continue
         input = Variable(sample_batched['past']).cpu() 
         target = Variable(sample_batched['future']).cpu()
          # note that no regularization is needed here, since it is taken care by RM_predictor
@@ -69,16 +72,21 @@ def test_RMpred(test_loader,loss_fn,test_logger,opt):
         print('batch:',i_batch,'\n')
         # Prediction by Persistence
         output = target.clone()
+        #for n in range(15,input.data.shape[0]):
+        print('chkprint::: 1 rmpred')
         for n in range(input.data.shape[0]):
             print('past file name:',n,sample_batched['fnames_past'][n])
             output.data[n,:,0,:,:] = torch.from_numpy(RM_predictor(input.data.numpy()[n,:,0,:,:],opt.tdim_use))
             
+        print('chkprint::: 2 loss')
         loss = loss_fn(output, target)
 
         # for logging
+        print('chkprint::: 3 loss update')
         losses.update(loss.item(), input.size(0))
         
         # apply evaluation metric
+        print('chkprint::: 4 eval')
         Xtrue = target.data.cpu().numpy()
         Xmodel = output.data.cpu().numpy()
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(target.data.cpu().numpy(),
@@ -100,6 +108,10 @@ def test_RMpred(test_loader,loss_fn,test_logger,opt):
         if (i_batch+1) % 1 == 0:
             print ('Testing, Iter [%d/%d] Loss: %.4e' 
                    %(i_batch+1, len(test_loader.dataset)//test_loader.batch_size, loss.item()))
+            
+        # free memory
+        del input,target,output,loss
+        
     # logging for averaged loss
     RMSE,CSI,FAR,POD,Cor,MaxMSE,FSS_mean = MetricRainfall(SumSE_all,hit_all,miss_all,falarm_all,
                                                           m_xy_all,m_xx_all,m_yy_all,

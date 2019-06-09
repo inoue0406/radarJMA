@@ -1,6 +1,6 @@
+import numpy as np
 import torch 
 import torchvision
-import numpy as np
 import torch.utils.data as data
 import torchvision.transforms as transforms
 
@@ -84,13 +84,13 @@ if __name__ == '__main__':
         # Prep logger
         train_logger = Logger(
             os.path.join(opt.result_path, 'train.log'),
-            ['epoch', 'loss', 'RMSE', 'CSI', 'FAR', 'POD', 'Cor', 'lr'])
+            ['epoch', 'loss', 'RMSE', 'CSI', 'FAR', 'POD', 'Cor','MaxMSE','FSS_mean','lr'])
         train_batch_logger = Logger(
             os.path.join(opt.result_path, 'train_batch.log'),
-            ['epoch', 'batch', 'loss', 'RMSE', 'CSI', 'FAR', 'POD', 'Cor', 'lr'])
+            ['epoch', 'batch', 'loss', 'RMSE', 'CSI', 'FAR', 'POD', 'Cor','MaxMSE','FSS_mean','lr'])
         valid_logger = Logger(
             os.path.join(opt.result_path, 'valid.log'),
-            ['epoch', 'loss', 'RMSE', 'CSI', 'FAR', 'POD', 'Cor'])
+            ['epoch', 'loss', 'RMSE', 'CSI', 'FAR', 'POD', 'Cor','MaxMSE','FSS_mean'])
     
         # training 
         for epoch in range(opt.n_epochs):
