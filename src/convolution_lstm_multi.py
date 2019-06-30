@@ -53,8 +53,12 @@ class ConvLSTMCell(nn.Module):
 class ConvLayers(nn.Module):
     # A block of convolution layers for downsizing
     def __init__(self, input_channels, output_channels, mid_chs, kernel_size, bias=True):
-        super(ConvLSTMCell, self).__init__()
-
+        super(ConvLayers, self).__init__()
+        print('ConvLayers----------------')
+        print('input channels:',input_channels)
+        print('output channels:',output_channels)
+        print('mid channels:',mid_chs)
+        
         self.conv1 = nn.Conv2d(in_channels=input_channels, out_channels=mid_chs[0],
                                kernel_size=kernel_size, padding=1, stride=2, bias=bias)
         self.bn1 = nn.BatchNorm2d(mid_chs[0])
@@ -75,27 +79,37 @@ class ConvLayers(nn.Module):
         self.l_relu = nn.LeakyReLU(0.1)
 
     def forward(self, x):
+        #print("in ConvLayers input shape:",x.shape)
         conv1 = self.conv1(x)
         conv1 = self.bn1(conv1)
         conv1 = self.l_relu(conv1)
+        #print("in ConvLayers output shape:",conv1.shape)
         conv2 = self.conv2(conv1)
         conv2 = self.bn2(conv2)
         conv2 = self.l_relu(conv2)
+        #print("in ConvLayers output shape:",conv2.shape)
         conv3 = self.conv3(conv2)
         conv3 = self.bn3(conv3)
         conv3 = self.l_relu(conv3)
+        #print("in ConvLayers output shape:",conv3.shape)
         conv4 = self.conv4(conv3)
         conv4 = self.bn4(conv4)
         conv4 = self.l_relu(conv4)
-        conv5 = self.conv4(conv4)
-        conv5 = self.bn4(conv5)
+        #print("in ConvLayers output shape:",conv4.shape)
+        conv5 = self.conv5(conv4)
+        conv5 = self.bn5(conv5)
         conv5 = self.l_relu(conv5)
+        #print("in ConvLayers output shape:",conv5.shape)
         return conv5
 
 class DeconvLayers(nn.Module):
     # A block of convolution layers for downsizing
     def __init__(self, input_channels, output_channels, mid_chs, kernel_size, bias=True):
-        super(ConvLSTMCell, self).__init__()
+        super(DeconvLayers, self).__init__()
+        print('DeconvLayers----------------')
+        print('input channels:',input_channels)
+        print('output channels:',output_channels)
+        print('mid channels:',mid_chs)
 
         self.deconv5 = nn.ConvTranspose2d(in_channels=input_channels, out_channels=mid_chs[3],
                                         kernel_size=kernel_size, stride=2, padding=1, bias=bias)
@@ -116,7 +130,8 @@ class DeconvLayers(nn.Module):
         self.l_relu = nn.LeakyReLU(0.1)
 
     def forward(self, x):
-        #
+        #print("in DeconvLayers input shape:",x.shape)
+
         z = self.deconv5(x)
         z = self.l_relu(z)
         ## Add skip connections
@@ -137,6 +152,7 @@ class DeconvLayers(nn.Module):
         ## Add skip connections
         #z = torch.cat([z, self.skip_values['conv3']])
         output = self.deconv1(z)
+        #print("in DeconvLayers output shape:",output.shape)
         return output
 
 class CLSTM_EP_MUL(nn.Module):
@@ -145,7 +161,7 @@ class CLSTM_EP_MUL(nn.Module):
     def __init__(self, input_channels, hidden_channels, kernel_size, bias=True):
         # input_channels (scalar) 
         # hidden_channels (scalar) 
-        super(CLSTM_EP, self).__init__()
+        super(CLSTM_EP_MUL, self).__init__()
         self.input_channels = input_channels
         self.hidden_channels = hidden_channels
         self.kernel_size = kernel_size
@@ -159,17 +175,17 @@ class CLSTM_EP_MUL(nn.Module):
         cell_p1 = ConvLSTMCell(self.input_channels, self.hidden_channels, self.kernel_size, self.bias)
         self.predictor1 = cell_p1
         self._all_layers.append(cell_p1)
-        # LSTM2
+        # LSTM2 (small)
         cell_e2 = ConvLSTMCell(self.input_channels, self.hidden_channels, self.kernel_size, self.bias)
-        self.encoder1 = cell_e2
+        self.encoder2 = cell_e2
         self._all_layers.append(cell_e2)
         cell_p2 = ConvLSTMCell(self.input_channels, self.hidden_channels, self.kernel_size, self.bias)
-        self.predictor1 = cell_p2
+        self.predictor2 = cell_p2
         self._all_layers.append(cell_p2)
         
         # Conv&Deconv layers to work with LSTM
-        conv_lyr = ConvLayers(self.hidden_channels, self.hidden_channels, [16,32,64,64], self.kernel_size, self.bias)
-        deconv_lyr = DeconvLayers(self.hidden_channels, self.hidden_channels, [16,32,64,64], self.kernel_size, self.bias)
+        conv_lyr = ConvLayers(self.hidden_channels, self.hidden_channels, [16,32,64,32], self.kernel_size, self.bias)
+        deconv_lyr = DeconvLayers(self.hidden_channels, self.hidden_channels, [16,32,64,32], self.kernel_size, self.bias)
         self.conv_lyr = conv_lyr
         self.deconv_lyr = deconv_lyr
         self._all_layers.append(conv_lyr)
@@ -182,12 +198,16 @@ class CLSTM_EP_MUL(nn.Module):
     def forward(self, input):
         x = input
         bsize, tsize, channels, height, width = x.size()
+        # zero matrix for original and small size
         xzero = Variable(torch.zeros(bsize, channels, height, width)).cuda()
+        h_small = round(height / (2**5) + 0.5)
+        w_small = round(width / (2**5) + 0.5)
+        xz_small = Variable(torch.zeros(bsize, channels, h_small, w_small)).cuda()
         # initialize internal state
         (he1, ce1) = self.encoder1.init_hidden(batch_size=bsize, hidden=self.hidden_channels, shape=(height, width))
         (hp1, cp1) = self.predictor1.init_hidden(batch_size=bsize, hidden=self.hidden_channels, shape=(height, width))
-        (he2, ce2) = self.encoder2.init_hidden(batch_size=bsize, hidden=self.hidden_channels, shape=(height, width))
-        (hp2, cp2) = self.predictor2.init_hidden(batch_size=bsize, hidden=self.hidden_channels, shape=(height, width))
+        (he2, ce2) = self.encoder2.init_hidden(batch_size=bsize, hidden=self.hidden_channels, shape=(h_small, w_small))
+        (hp2, cp2) = self.predictor2.init_hidden(batch_size=bsize, hidden=self.hidden_channels, shape=(h_small, w_small))
         # encoding
         for it in range(tsize):
             # convolution for downsizing
@@ -195,10 +215,10 @@ class CLSTM_EP_MUL(nn.Module):
             (ce2) = self.conv_lyr(ce1)
             # forward
             (he1, ce1) = self.encoder1(x[:,it,:,:,:], he1, ce1)
-            (he2, ce2) = self.encoder1(xzero, he2, ce2)
+            (he2, ce2) = self.encoder2(xz_small, he2, ce2)
             # deconvolution for upsizing
             (he1) = he1 + self.deconv_lyr(he2)
-            (ce1) = ce2 + self.deconv_lyr(ce2)
+            (ce1) = ce1 + self.deconv_lyr(ce2)
         # copy internal state to predictor1
         hp1 = he1
         cp1 = ce1
@@ -212,10 +232,10 @@ class CLSTM_EP_MUL(nn.Module):
             (cp2) = self.conv_lyr(cp1)
             # forward
             (hp1, cp1) = self.predictor1(xzero, hp1, cp1)
-            (hp2, cp2) = self.predictor2(xzero, hp2, cp2)
+            (hp2, cp2) = self.predictor2(xz_small, hp2, cp2)
             # deconvolution for upsizing
             (hp1) = hp1 + self.deconv_lyr(hp2)
-            (cp1) = cp2 + self.deconv_lyr(cp2)
+            (cp1) = cp1 + self.deconv_lyr(cp2)
             # last convolution
             xout[:,it,:,:,:] = self.lastconv(hp1)
         return xout
