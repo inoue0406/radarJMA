@@ -13,7 +13,6 @@ from criteria_precip import *
 
 # training/validation for one epoch
 
-
 # Reconstruction + KL divergence losses summed over all elements and batch
 def loss_function(recon_x, x, mu, logvar):
     BCE = F.binary_cross_entropy(recon_x, x, reduction='sum')

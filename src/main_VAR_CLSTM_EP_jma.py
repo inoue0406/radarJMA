@@ -20,7 +20,13 @@ from train_valid_epoch_var import *
 from utils import Logger
 from opts import parse_opts
 
-
+def count_parameters(model,f):
+    for name,p in model.named_parameters():
+        f.write("name,"+name+", Trainable, "+str(p.requires_grad)+",#params, "+str(p.numel())+"\n")
+    Nparam = sum(p.numel() for p in model.parameters())
+    Ntrain = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    f.write("Number of params:"+str(Nparam)+", Trainable parameters:"+str(Ntrain)+"\n")
+    
 if __name__ == '__main__':
    
     # parse command-line options
@@ -38,6 +44,9 @@ if __name__ == '__main__':
     logfile.write('Start time:'+time.ctime()+'\n')
     tstart = time.time()
 
+    # model information
+    modelinfo = open(os.path.join(opt.result_path, 'model_info.txt'),'w')
+    
     # prepare regularizer for data
     if opt.data_scaling == 'linear':
         reg = LinearRegularizer()
@@ -67,6 +76,9 @@ if __name__ == '__main__':
         # ConvLSTM Encoder Predictor
         convlstm = VAR_CLSTM_EP(input_channels=1, hidden_channels=opt.hidden_channels,
                                 kernel_size=opt.kernel_size).cuda()
+        modelinfo.write('Model Structure \n')
+        modelinfo.write(str(convlstm))
+        count_parameters(convlstm,modelinfo)
     
         # Type of optimizers adam/rmsprop
         if opt.optimizer == 'adam':
@@ -98,6 +110,10 @@ if __name__ == '__main__':
             valid_epoch(epoch,opt.n_epochs,valid_loader,convlstm,
                         valid_logger,opt,reg)
 
+            # save the trained model at interval
+            if epoch % 2 == 10:
+                torch.save(convlstm,os.path.join(opt.result_path, 'trained_CLSTM_epoch'+str(epoch)+'.model'))
+            
         # save the trained model
         # (1) as binary 
         torch.save(convlstm,os.path.join(opt.result_path, 'trained_CLSTM.model'))

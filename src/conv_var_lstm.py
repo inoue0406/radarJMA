@@ -328,7 +328,7 @@ class VAR_CLSTM_EP(nn.Module):
             (hp1) = hp1 + self.deconv_lyr(hp2)
             (cp1) = cp1 + self.deconv_lyr(cp2)
             # last convolution
-            xout[:,it,:,:,:] = self.lastconv(hp1)
+            xout[:,it,:,:,:] = torch.sigmoid(self.lastconv(hp1))
         return xout,mu,logvar
 
 #if __name__ == '__main__':
