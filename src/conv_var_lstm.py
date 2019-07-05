@@ -243,12 +243,13 @@ class Var_Enc(nn.Module):
 class VAR_CLSTM_EP(nn.Module):
     # Variational Encoder-Predictor using Convolutional LSTM Cell
     # Multiple layers version
-    def __init__(self, input_channels, hidden_channels, kernel_size, bias=True):
+    def __init__(self, input_channels, hidden_channels, mid_channels, tdim_use, kernel_size, bias=True):
         # input_channels (scalar) 
         # hidden_channels (scalar) 
         super(VAR_CLSTM_EP, self).__init__()
         self.input_channels = input_channels
         self.hidden_channels = hidden_channels
+        self.mid_channels = mid_channels
         self.kernel_size = kernel_size
         self.bias = bias
         self._all_layers = []
@@ -269,15 +270,15 @@ class VAR_CLSTM_EP(nn.Module):
         self._all_layers.append(cell_p2)
         
         # Conv&Deconv layers to work with LSTM
-        conv_lyr = ConvLayers(self.hidden_channels, self.hidden_channels, [16,32,64,32], self.kernel_size, self.bias)
-        deconv_lyr = DeconvLayers(self.hidden_channels, self.hidden_channels, [16,32,64,32], self.kernel_size, self.bias)
+        conv_lyr = ConvLayers(self.hidden_channels, self.hidden_channels, self.mid_channels, self.kernel_size, self.bias)
+        deconv_lyr = DeconvLayers(self.hidden_channels, self.hidden_channels, self.mid_channels, self.kernel_size, self.bias)
         self.conv_lyr = conv_lyr
         self.deconv_lyr = deconv_lyr
         self._all_layers.append(conv_lyr)
         self._all_layers.append(deconv_lyr)
         
         # Variational encoding
-        var_enc = Var_Enc(24, 1, [16,32,64,32], self.kernel_size, self.bias)
+        var_enc = Var_Enc(tdim_use*2, 1, self.mid_channels, self.kernel_size, self.bias)
         self.var_enc = var_enc
         self._all_layers.append(var_enc)
         

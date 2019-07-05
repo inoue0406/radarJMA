@@ -74,9 +74,10 @@ def parse_opts():
     parser.set_defaults(test=False)
     parser.add_argument(
         '--eval_threshold',
-        default=0.5,
+        default=[0.5,10,20],
         type=float,
-        help='Threshold in [mm/h] for precipitation evaluation')
+        nargs='*',
+        help='Thresholds in [mm/h] for precipitation evaluation')
     parser.add_argument(
         '--n_threads',
         default=4,
@@ -103,6 +104,12 @@ def parse_opts():
         default=3,
         type=int,
         help='kernel size in ConvLSTM.')
+    parser.add_argument(
+        '--mid_channels',
+        default=[16,32,32,16],
+        type=int,
+        nargs='*',
+        help='number of channels for upsampling / downsampling')
     
     args = parser.parse_args()
 
