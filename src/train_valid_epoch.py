@@ -51,8 +51,8 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
         Xtrue = reg.inv(target.data.cpu().numpy())
         Xmodel = reg.inv(output.data.cpu().numpy())
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,
-                                                                  th=opt.eval_threshold)
-        FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold,win=10)
+                                                                  th=opt.eval_threshold[0])
+        FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold[0],win=10)
 
         RMSE,CSI,FAR,POD,Cor,MaxMSE,FSS_mean = MetricRainfall(SumSE,hit,miss,falarm,
                                                               m_xy,m_xx,m_yy,
@@ -147,8 +147,8 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt,reg
         Xtrue = reg.inv(target.data.cpu().numpy())
         Xmodel = reg.inv(output.data.cpu().numpy())
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,
-                                                                  th=opt.eval_threshold)
-        FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold,win=10)
+                                                                  th=opt.eval_threshold[0])
+        FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold[0],win=10)
         
         SumSE_all = np.append(SumSE_all,SumSE,axis=0)
         hit_all = np.append(hit_all,hit,axis=0)
@@ -186,7 +186,7 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt,reg
 # Test
 # --------------------------
 
-def test_CLSTM_EP(test_loader,model,loss_fn,opt,reg):
+def test_CLSTM_EP(test_loader,model,loss_fn,opt,reg,threshold):
     print('Testing for the model')
     
     # initialize
@@ -215,8 +215,8 @@ def test_CLSTM_EP(test_loader,model,loss_fn,opt,reg):
         Xtrue = reg.inv(target.data.cpu().numpy())
         Xmodel = reg.inv(output.data.cpu().numpy())
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,
-                                                                  th=opt.eval_threshold)
-        FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold,win=10)
+                                                                  th=threshold)
+        FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=threshold,win=10)
         
         SumSE_all = np.append(SumSE_all,SumSE,axis=0)
         hit_all = np.append(hit_all,hit,axis=0)
@@ -248,7 +248,7 @@ def test_CLSTM_EP(test_loader,model,loss_fn,opt,reg):
                        'MaxMSE': MaxMSE,
                        'FSS_mean': FSS_mean})
     df.to_csv(os.path.join(opt.result_path,
-                           'test_evaluation_predtime_%.2f.csv' % opt.eval_threshold))
+                           'test_evaluation_predtime_%.2f.csv' % threshold))
     # free gpu memory
     del input,target,output,loss
 

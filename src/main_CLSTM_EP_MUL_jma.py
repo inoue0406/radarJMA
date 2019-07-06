@@ -66,6 +66,7 @@ if __name__ == '__main__':
     
         # ConvLSTM Encoder Predictor
         convlstm = CLSTM_EP_MUL(input_channels=1, hidden_channels=opt.hidden_channels,
+                                mid_chs=opt.mid_channels,
                                 kernel_size=opt.kernel_size).cuda()
         
         # "feed-in" type of predictor
@@ -129,7 +130,8 @@ if __name__ == '__main__':
                                                    shuffle=False)
         
         # testing for the trained model
-        test_CLSTM_EP(test_loader,convlstm,loss_fn,opt,reg)
+        for threshold in opt.eval_threshold:
+            test_CLSTM_EP(test_loader,convlstm,loss_fn,opt,reg,threshold)
 
     # output elapsed time
     logfile.write('End time: '+time.ctime()+'\n')
