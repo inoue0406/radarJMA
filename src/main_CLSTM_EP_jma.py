@@ -128,7 +128,8 @@ if __name__ == '__main__':
                                                    shuffle=False)
         
         # testing for the trained model
-        test_CLSTM_EP(test_loader,convlstm,loss_fn,opt,reg)
+        for threshold in opt.eval_threshold:
+            test_CLSTM_EP(test_loader,convlstm,loss_fn,opt,reg,threshold)
 
     # output elapsed time
     logfile.write('End time: '+time.ctime()+'\n')
