@@ -20,6 +20,20 @@ from train_valid_epoch import *
 from utils import Logger
 from opts import parse_opts
 
+def weighted_MSE_loss(output, target):
+    # custom loss function weighing heavy rains
+    mask_02 = (target<2.0).float()
+    mask_05 = ((target<5.0) * (target>=2.0)).float()
+    mask_10 = ((target<10.0) * (target>=5.0)).float()
+    mask_30 = ((target<30.0) * (target>=10.0)).float()
+    mask_XX = (target>=30.0).float()
+    loss = 1.0 * torch.mean((mask_02*(output - target))**2)+ \
+           2.0 * torch.mean((mask_05*(output - target))**2)+ \
+           5.0 * torch.mean((mask_10*(output - target))**2)+ \
+           10.0 * torch.mean((mask_30*(output - target))**2)+ \
+           30.0 * torch.mean((mask_XX*(output - target))**2)
+    return loss
+
 if __name__ == '__main__':
    
     # parse command-line options
@@ -70,7 +84,10 @@ if __name__ == '__main__':
         # "feed-in" type of predictor
         #convlstm = CLSTM_EP2(input_channels=1, hidden_channels=opt.hidden_channels,
         #                    kernel_size=opt.kernel_size).cuda()
-        loss_fn = torch.nn.MSELoss()
+        if opt.loss_function == 'MSE':
+            loss_fn = torch.nn.MSELoss()
+        elif opt.loss_function == 'WeightedMSE':
+            loss_fn =weighted_MSE_loss
 
         # Type of optimizers adam/rmsprop
         if opt.optimizer == 'adam':

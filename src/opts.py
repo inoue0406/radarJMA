@@ -38,6 +38,11 @@ def parse_opts():
         type=str,
         help='Optimizer type adam or rmsprop')
     parser.add_argument(
+        '--loss_function',
+        default='MSE',
+        type=str,
+        help='loss function MSE or WeightedMSE')
+    parser.add_argument(
         '--learning_rate',
         default=0.01,
         type=float,
