@@ -294,7 +294,15 @@ class VAR_CLSTM_EP(nn.Module):
         w_small = round(width / (2**5) + 0.5)
         xz_small = Variable(torch.zeros(bsize, channels, h_small, w_small)).cuda()
         # Encoding
-        z,mu,logvar = self.var_enc(x_vae)
+        if self.training:
+            # When in training mode, variational encoder to generate z
+            z,mu,logvar = self.var_enc(x_vae)
+        else:
+            # When in testing mode, sample z from prior (normal)
+            mu = Variable(torch.zeros(bsize, channels, h_small, w_small)).cuda()
+            # when var is 1, logvar should be 0
+            logvar = Variable(torch.zeros(bsize, channels, h_small, w_small)).cuda()
+            z = torch.randn_like(mu)
         # initialize internal state
         (he1, ce1) = self.encoder1.init_hidden(batch_size=bsize, hidden=self.hidden_channels, shape=(height, width))
         (hp1, cp1) = self.predictor1.init_hidden(batch_size=bsize, hidden=self.hidden_channels, shape=(height, width))

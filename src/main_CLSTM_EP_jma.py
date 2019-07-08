@@ -87,7 +87,7 @@ if __name__ == '__main__':
         if opt.loss_function == 'MSE':
             loss_fn = torch.nn.MSELoss()
         elif opt.loss_function == 'WeightedMSE':
-            loss_fn =weighted_MSE_loss
+            loss_fn = weighted_MSE_loss
 
         # Type of optimizers adam/rmsprop
         if opt.optimizer == 'adam':
