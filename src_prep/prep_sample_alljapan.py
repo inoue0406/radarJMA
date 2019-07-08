@@ -94,7 +94,7 @@ def sample_alljapan_prep(year,df_sam):
             h5fname = h5fname.replace('.nc.gz','_'+str(ii)+'_'+str(jj)+'.h5')
             # write to h5 file
             print('writing h5 file:',h5fname)
-            h5file = h5py.File('../data/data_alljapan/'+h5fname,'w')
+            h5file = h5py.File('../data/data_alljapan_'+str(year)+'/'+h5fname,'w')
             h5file.create_dataset('R',data= R1h)
             h5file.close()
     #sys.exit()
@@ -111,8 +111,8 @@ def fname_1h_ago(fname):
 
 if __name__ == '__main__':
     #for year in [2015,2016,2017]:
-    year = 2015
-    df = pd.read_csv("../data/stat_jma/stat_alljapan_2015.txt")
+    year = 2016
+    df = pd.read_csv("../data/stat_jma/stat_alljapan_"+str(year)+".txt")
     Nerr = np.sum(df["max_rain"]<=-32768)
     print("Number of irregular values",Nerr)
 
