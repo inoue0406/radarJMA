@@ -64,7 +64,7 @@ if __name__ == '__main__':
                                         tdim_use=opt.tdim_use,
                                         transform=None)
     
-        valid_dataset = JMARadarDataset(root_dir=opt.data_path,
+        valid_dataset = JMARadarDataset(root_dir=opt.valid_data_path,
                                         csv_file=opt.valid_path,
                                         tdim_use=opt.tdim_use,
                                         transform=None)
