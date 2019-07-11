@@ -136,7 +136,7 @@ if __name__ == '__main__':
             loss_fn = torch.nn.MSELoss()
             
         # prepare loader
-        test_dataset = JMARadarDataset(root_dir=opt.data_path,
+        test_dataset = JMARadarDataset(root_dir=opt.valid_data_path,
                                         csv_file=opt.test_path,
                                         tdim_use=opt.tdim_use,
                                         transform=None)
