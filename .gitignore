@@ -5,3 +5,5 @@ data
 run/log*
 run/result*
 run/old*
+src_post/log*
+src_prep/log*

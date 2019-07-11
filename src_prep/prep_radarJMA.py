@@ -39,6 +39,7 @@ def ext_nc_JMA(fname):
     #
     # extract data
     Rclip = R.data[0,j0:j1,i0:i1]
+    Rclip = Rclip.T   # transpose so that i index comes first
     lon_clip=lons.data[i0:i1]
     lat_clip=lats.data[j0:j1]
     print("rainfall min:max",Rclip.min(),Rclip.max())
@@ -46,9 +47,9 @@ def ext_nc_JMA(fname):
     return(Rclip)
 
 # read
-#infile_root = '../data/2015/01/01/'
-infile_root = '../data/2017/'
-#infile_root = '../data/'
+infile_root = '../data/jma_radar/2015/'
+#infile_root = '../data/jma_radar/2016/'
+#infile_root = '../data/jma_radar/2017/'
 print('dir:',infile_root)
 
 nx = 200
@@ -81,7 +82,8 @@ for infile in sorted(glob.iglob(infile_root + '/*/*/*00utc.nc.gz')):
     h5fname = infile.split('/')[-1]
     h5fname = h5fname.replace('.nc.gz','.h5')
     print('writing h5 file:',h5fname)
-    h5file = h5py.File('../data_h5/'+h5fname,'w')
+    #h5file = h5py.File('../data_h5/'+h5fname,'w')
+    h5file = h5py.File('../data/data_kanto/'+h5fname,'w')
     h5file.create_dataset('R',data= R1h)
     h5file.close()
     #sys.exit()
