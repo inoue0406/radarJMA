@@ -77,10 +77,15 @@ if __name__ == '__main__':
                                                    batch_size=opt.batch_size,
                                                    shuffle=False)
     
-        # ConvLSTM Encoder Predictor
-        convlstm = CLSTM_EP(input_channels=1, hidden_channels=opt.hidden_channels,
-                            kernel_size=opt.kernel_size).cuda()
-        
+        if opt.transfer_path == 'None':
+            # ConvLSTM Encoder Predictor
+            convlstm = CLSTM_EP(input_channels=1, hidden_channels=opt.hidden_channels,
+                                kernel_size=opt.kernel_size).cuda()
+        else:
+            # Use pretrained weights for transfer learning
+            print('loading pretrained model:',opt.transfer_path)
+            convlstm = torch.load(opt.transfer_path)
+            
         # "feed-in" type of predictor
         #convlstm = CLSTM_EP2(input_channels=1, hidden_channels=opt.hidden_channels,
         #                    kernel_size=opt.kernel_size).cuda()
