@@ -16,7 +16,8 @@ if __name__ == '__main__':
     for infile in sorted(glob.iglob(pic_path)):
         outgif = infile.replace('dt00.png','.gif')
         ims = []
-        fig=plt.figure(figsize=(20, 10))
+        fig=plt.figure(figsize=(16, 8))
+        plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
         for n in range(6):
             in_dt = infile.replace('dt00','dt%02d' % n)
             print(infile)
