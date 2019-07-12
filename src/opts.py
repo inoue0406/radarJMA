@@ -7,6 +7,10 @@ def parse_opts():
         type=str,
         help='directory path of data')
     parser.add_argument(
+        '--valid_data_path',
+        type=str,
+        help='directory path of valid data')
+    parser.add_argument(
         '--data_scaling',
         default='linear',
         type=str,
@@ -28,6 +32,11 @@ def parse_opts():
         default='results',
         type=str,
         help='Result directory path')
+    parser.add_argument(
+        '--transfer_path',
+        default='None',
+        type=str,
+        help='Transfer Learning Model Name')
     parser.add_argument(
         '--tdim_use',
         default=12,

@@ -64,7 +64,7 @@ if __name__ == '__main__':
                                         tdim_use=opt.tdim_use,
                                         transform=None)
     
-        valid_dataset = JMARadarDataset(root_dir=opt.data_path,
+        valid_dataset = JMARadarDataset(root_dir=opt.valid_data_path,
                                         csv_file=opt.valid_path,
                                         tdim_use=opt.tdim_use,
                                         transform=None)
@@ -77,10 +77,15 @@ if __name__ == '__main__':
                                                    batch_size=opt.batch_size,
                                                    shuffle=False)
     
-        # ConvLSTM Encoder Predictor
-        convlstm = CLSTM_EP(input_channels=1, hidden_channels=opt.hidden_channels,
-                            kernel_size=opt.kernel_size).cuda()
-        
+        if opt.transfer_path == 'None':
+            # ConvLSTM Encoder Predictor
+            convlstm = CLSTM_EP(input_channels=1, hidden_channels=opt.hidden_channels,
+                                kernel_size=opt.kernel_size).cuda()
+        else:
+            # Use pretrained weights for transfer learning
+            print('loading pretrained model:',opt.transfer_path)
+            convlstm = torch.load(opt.transfer_path)
+            
         # "feed-in" type of predictor
         #convlstm = CLSTM_EP2(input_channels=1, hidden_channels=opt.hidden_channels,
         #                    kernel_size=opt.kernel_size).cuda()
@@ -136,7 +141,7 @@ if __name__ == '__main__':
             loss_fn = torch.nn.MSELoss()
             
         # prepare loader
-        test_dataset = JMARadarDataset(root_dir=opt.data_path,
+        test_dataset = JMARadarDataset(root_dir=opt.valid_data_path,
                                         csv_file=opt.test_path,
                                         tdim_use=opt.tdim_use,
                                         transform=None)
