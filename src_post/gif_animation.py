@@ -2,6 +2,7 @@
 # Create GIF animation from png files
 #
 import glob
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,8 +11,19 @@ import matplotlib.animation as animation
 from PIL import Image
         
 if __name__ == '__main__':
+    
+    # read case name from command line
+    argvs = sys.argv
+    argc = len(argvs)
 
-    pic_path = 'result_20190708_vclstm_modtst/png/*dt00.png'
+    if argc != 2:
+        print('Usage: python gif_animation.py CASENAME')
+        quit()
+
+    case = argvs[1]
+    #case = 'result_20190625_clstm_lrdecay07_ep20'
+    #case = 'result_20190712_tr_clstm_flatsampled'
+    pic_path = case + '/png/*dt00.png'
 
     for infile in sorted(glob.iglob(pic_path)):
         outgif = infile.replace('dt00.png','.gif')

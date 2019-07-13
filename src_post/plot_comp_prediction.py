@@ -37,7 +37,7 @@ def mod_str_interval(inte_str):
 
 # plot comparison of predicted vs ground truth
 def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
-                         df_sampled,pic_path,reg,mode='png_whole'):
+                         df_sampled,pic_path,reg,case,mode='png_whole'):
     # create pic save dir
     if not os.path.exists(pic_path):
         os.mkdir(pic_path)
@@ -59,14 +59,18 @@ def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
     convlstm.eval()
     #
     for i_batch, sample_batched in enumerate(valid_loader):
+        fnames = sample_batched['fnames_future']
+        # skip if no overlap
+        if len(set(fnames) &  set(df_sampled['fname'].values)) == 0:
+            print("skipped batch:",i_batch)
+            continue
         # apply the trained model to the data
         input = Variable(reg.fwd(sample_batched['past'])).cuda()
         target = Variable(reg.fwd(sample_batched['future'])).cuda()
         #input = Variable(sample_batched['past']).cpu()
         #target = Variable(sample_batched['future']).cpu()
         output = convlstm(input)
-        #
-        fnames = sample_batched['fnames_future']
+        
         # Output only selected data in df_sampled
         for n,fname in enumerate(fnames):
             if (not (fname in df_sampled['fname'].values)):
@@ -83,7 +87,7 @@ def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
             cm = Colormap_JMA()
             if mode == 'png_whole': # output as stationary image
                 fig, ax = plt.subplots(figsize=(20, 10))
-                fig.suptitle("Precip prediction starting at: "+fname, fontsize=20)
+                fig.suptitle("Precip prediction starting at: "+fname+"\n"+case, fontsize=20)
                 for nt in range(6):
                 #for nt in range(1,12,2):
                     id = nt*2+1
@@ -112,7 +116,7 @@ def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
             if mode == 'png_ind': # output as invividual image
                 for nt in range(6):
                     fig, ax = plt.subplots(figsize=(8, 4))
-                    fig.suptitle("Precip prediction starting at: "+fname, fontsize=10)
+                    fig.suptitle("Precip prediction starting at: "+fname+"\n"+case, fontsize=10)
                     #        
                     id = nt*2+1
                     pos = nt+1
@@ -128,8 +132,8 @@ def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
                     plt.title("pred:"+dtstr+"min")
                     plt.grid()
                     # color bar
-                    fig.subplots_adjust(right=0.95)
-                    cbar_ax = fig.add_axes([0.96, 0.15, 0.01, 0.7])
+                    fig.subplots_adjust(right=0.93,top=0.85)
+                    cbar_ax = fig.add_axes([0.94, 0.15, 0.01, 0.7])
                     fig.colorbar(im, cax=cbar_ax)
                     # save as png
                     i = df_sampled.index[df_sampled['fname']==fname]
@@ -146,21 +150,33 @@ if __name__ == '__main__':
     batch_size = 10
     tdim_use = 12
 
+    # read case name from command line
+    argvs = sys.argv
+    argc = len(argvs)
+
+    if argc != 2:
+        print('Usage: python plot_comp_prediction.py CASENAME')
+        quit()
+
+    case = argvs[1]
+    #case = 'result_20190712_tr_clstm_flatsampled'
+    #case = 'result_20190625_clstm_lrdecay07_ep20'
+
     data_path = '../data/data_h5/'
     filelist = '../data/valid_simple_JMARadar.csv'
-    model_fname = 'result_20180818_lr0002/trained_CLSTM.model'
-    pic_path = 'result_20180818_lr0002/png/'
+    model_fname = case + '/trained_CLSTM.model'
+    pic_path = case + '/png/'
 
-    scaling = 'log'
+    scaling = 'linear'
     
     # prepare regularizer for data
-    if opt.data_scaling == 'linear':
+    if scaling == 'linear':
         reg = LinearRegularizer()
-    elif opt.data_scaling == 'log':
+    elif scaling == 'log':
         reg = LogRegularizer()
 
     # samples to be plotted
-    sample_path = '../data/sampled_forplot_JMARadar.csv'
+    sample_path = '../data/sampled_forplot_3day_JMARadar.csv'
 
     # read sampled data in csv
     df_sampled = pd.read_csv(sample_path)
@@ -168,6 +184,6 @@ if __name__ == '__main__':
     print(df_sampled)
     
     plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
-                         df_sampled,pic_path,reg,mode='png_ind')
+                         df_sampled,pic_path,reg,case,mode='png_ind')
 
 

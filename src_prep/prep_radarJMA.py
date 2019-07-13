@@ -47,8 +47,8 @@ def ext_nc_JMA(fname):
     return(Rclip)
 
 # read
-infile_root = '../data/jma_radar/2015/'
-#infile_root = '../data/jma_radar/2016/'
+#infile_root = '../data/jma_radar/2015/'
+infile_root = '../data/jma_radar/2016/'
 #infile_root = '../data/jma_radar/2017/'
 print('dir:',infile_root)
 
