@@ -11,6 +11,12 @@ import subprocess
 import sys
 import os.path
 
+# -----------------------------
+# add "src" as import path
+path = os.path.join('../src')
+sys.path.append(path)
+from regularizer import RootRegularizer
+
 # extract data from nc file
 def ext_nc_JMA(fname):
     #nc = netCDF4.Dataset('../data/2015/01/01/2p-jmaradar5_2015-01-01_0000utc.nc', 'r')
@@ -50,11 +56,21 @@ def ext_nc_JMA(fname):
 #infile_root = '../data/jma_radar/2015/'
 #infile_root = '../data/jma_radar/2016/'
 infile_root = '../data/jma_radar/2017/'
-print('dir:',infile_root)
+print('input dir:',infile_root)
+
+# outfile
+outfile_root = '../data/data_kanto_int/'
+print('output dir:',infile_root)
+
+# a flag for integer output
+integer_output = True
+#integer_output = False
 
 nx = 200
 ny = 200
 nt = 12
+
+reg = RootRegularizer()
 
 #for infile in sorted(glob.iglob(infile_root + '*00utc.nc.gz')):
 for infile in sorted(glob.iglob(infile_root + '/*/*/*00utc.nc.gz')):
@@ -70,7 +86,6 @@ for infile in sorted(glob.iglob(infile_root + '/*/*/*00utc.nc.gz')):
         subprocess.run('gunzip -kf '+in_zfile,shell=True)
         in_nc=in_zfile.replace('.gz','')
         print('reading nc file:',in_nc)
-        #nc = netCDF4.Dataset('../data/2015/01/01/2p-jmaradar5_2015-01-01_0000utc.nc', 'r')
         if os.path.exists(in_nc):
             Rclip = ext_nc_JMA(in_nc)
         else:
@@ -78,18 +93,16 @@ for infile in sorted(glob.iglob(infile_root + '/*/*/*00utc.nc.gz')):
             next
         R1h[i,:,:]=Rclip
         subprocess.run('rm '+in_nc,shell=True)
+    # apply scaling if flag is set
+    if(integer_output):
+        # convert to unsigned integer
+        R1h = reg.fwd(R1h)*255
+        R1h = R1h.astype(np.uint8)
     # write to h5 file
     h5fname = infile.split('/')[-1]
     h5fname = h5fname.replace('.nc.gz','.h5')
     print('writing h5 file:',h5fname)
-    #h5file = h5py.File('../data_h5/'+h5fname,'w')
-    h5file = h5py.File('../data/data_kanto/'+h5fname,'w')
+    h5file = h5py.File(outfile_root+h5fname,'w')
     h5file.create_dataset('R',data= R1h)
     h5file.close()
     #sys.exit()
-
-        
-        
-
-        
-

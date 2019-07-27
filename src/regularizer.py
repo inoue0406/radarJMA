@@ -62,10 +62,61 @@ class LinearRegularizer():
         #          scaled intensity with 0-1 value range
         return X_scl*self.rmax
     
+class RootRegularizer():
+    # class for root regularization of rainfall values
+    def __init__(self):
+        self.rmax = 201.0 # max rainfall intensity
+        self.a = 1/3.0    # "cubic root"
+
+    def fwd(self,X):
+        # forward transformation
+        # input X: numpy array
+        #          rainfall intensity with 0-201[mm/h] value range
+        X = np.maximum(X,0.0) # force the value to be positive
+        return (X/self.rmax)**self.a
+
+    def inv(self,X_scl):
+        # inverse transformation
+        # input X_scl: numpy array
+        #          scaled intensity with 0-1 value range
+        X_scl = np.maximum(X_scl,0.0) # force the value to be positive
+        return self.rmax*(X_scl**(1/self.a))
+    
 if __name__ == '__main__':
     # test for regularization class
     print('Log Regularizer----------------------')
     reg = LogRegularizer()
+    print('test for ordinary values')
+    X = np.array([0.0])
+    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
+    X = np.array([0.001])
+    print('*note that small values are transformed to zero*')
+    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
+    X = np.array([0.01])
+    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
+    X = np.array([0.1])
+    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
+    X = np.array([1.0])
+    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
+    X = np.array([10.0])
+    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
+    X = np.array([201.0])
+    print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
+#    for n in range(9):
+#        X = np.array([(n*0.001+0.001)])
+#        print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
+#    for n in range(9):
+#        X = np.array([(n*0.01+0.01)])
+#        print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
+#    for n in range(9):
+#        X = np.array([(n*0.1+0.1)])
+#        print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
+#    for n in range(201):
+#        X = np.array([(n*1.0+1.0)])
+#        print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
+        
+    print('Root Regularizer----------------------')
+    reg = RootRegularizer()
     print('test for ordinary values')
     X = np.array([0.0])
     print('X=%f,X_scl=%f,X_inv=%f' % (X,reg.fwd(X),reg.inv(reg.fwd(X))))
