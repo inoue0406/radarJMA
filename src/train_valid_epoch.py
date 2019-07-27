@@ -56,7 +56,7 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
 
         RMSE,CSI,FAR,POD,Cor,MaxMSE,FSS_mean = MetricRainfall(SumSE,hit,miss,falarm,
                                                               m_xy,m_xx,m_yy,
-                                                              MaxSE_all,FSS_t_all,axis=None)
+                                                              MaxSE,FSS_t,axis=None)
 
         SumSE_all = np.append(SumSE_all,SumSE,axis=0)
         hit_all = np.append(hit_all,hit,axis=0)
