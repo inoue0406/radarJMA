@@ -15,7 +15,6 @@ import pdb
 
 from jma_pytorch_dataset import *
 from scaler import *
-from convolution_lstm_mod import *
 from train_valid_epoch import *
 from utils import Logger
 from opts import parse_opts
@@ -80,12 +79,24 @@ if __name__ == '__main__':
         valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset,
                                                    batch_size=opt.batch_size,
                                                    shuffle=False)
-    
-        if opt.transfer_path == 'None':
-            # ConvLSTM Encoder Predictor
+
+        if opt.model_name == 'clstm':
+            # convolutional lstm
+            from convolution_lstm_mod import *
             convlstm = CLSTM_EP(input_channels=1, hidden_channels=opt.hidden_channels,
                                 kernel_size=opt.kernel_size).cuda()
-        else:
+        elif opt.model_name == 'clstm-skip':
+            # convolutional lstm with skip connection
+            from convolution_lstm_mod import *
+            convlstm = CLSTM_EP3(input_channels=1, hidden_channels=opt.hidden_channels,
+                                kernel_size=opt.kernel_size).cuda()
+        elif opt.model_name == 'clstm-multi':
+            # convolutional lstm with multiple layers
+            from convolution_lstm_multi import *
+            convlstm = CLSTM_EP_MUL(input_channels=1, hidden_channels=opt.hidden_channels,
+                                kernel_size=opt.kernel_size).cuda()
+    
+        if opt.transfer_path != 'None':
             # Use pretrained weights for transfer learning
             print('loading pretrained model:',opt.transfer_path)
             convlstm = torch.load(opt.transfer_path)

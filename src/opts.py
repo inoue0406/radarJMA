@@ -33,10 +33,15 @@ def parse_opts():
         type=str,
         help='Result directory path')
     parser.add_argument(
+        '--model_name',
+        default='clstm',
+        type=str,
+        help='Model Name: clstm clstm_skip clstm_multi')
+    parser.add_argument(
         '--transfer_path',
         default='None',
         type=str,
-        help='Transfer Learning Model Name')
+        help='Transfer Learning Model Path')
     parser.add_argument(
         '--tdim_use',
         default=12,
