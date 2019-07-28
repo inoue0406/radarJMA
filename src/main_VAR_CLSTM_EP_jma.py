@@ -14,7 +14,7 @@ import time
 import pdb
 
 from jma_pytorch_dataset import *
-from regularizer import *
+from scaler import *
 from conv_var_lstm import *
 from train_valid_epoch_var import *
 from utils import Logger
@@ -47,11 +47,11 @@ if __name__ == '__main__':
     # model information
     modelinfo = open(os.path.join(opt.result_path, 'model_info.txt'),'w')
     
-    # prepare regularizer for data
+    # prepare scaler for data
     if opt.data_scaling == 'linear':
-        reg = LinearRegularizer()
+        scl = LinearScaler()
     elif opt.data_scaling == 'log':
-        reg = LogRegularizer()
+        scl = LogScaler()
         
     if not opt.no_train:
         # loading datasets
@@ -107,9 +107,9 @@ if __name__ == '__main__':
             scheduler.step()
             # training & validation
             train_epoch(epoch,opt.n_epochs,train_loader,convlstm,optimizer,
-                        train_logger,train_batch_logger,opt,reg)
+                        train_logger,train_batch_logger,opt,scl)
             valid_epoch(epoch,opt.n_epochs,valid_loader,convlstm,
-                        valid_logger,opt,reg)
+                        valid_logger,opt,scl)
 
             # save the trained model at interval
             if epoch % 2 == 10:
@@ -142,7 +142,7 @@ if __name__ == '__main__':
         # testing for the trained model
         for threshold in opt.eval_threshold:
             print('testing for threshold:',threshold)
-            test_CLSTM_EP(test_loader,convlstm,opt,reg,threshold)
+            test_CLSTM_EP(test_loader,convlstm,opt,scl,threshold)
 
     # output elapsed time
     logfile.write('End time: '+time.ctime()+'\n')

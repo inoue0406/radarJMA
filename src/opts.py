@@ -14,7 +14,7 @@ def parse_opts():
         '--data_scaling',
         default='linear',
         type=str,
-        help='scaling of data: linear or log')
+        help='scaling of data: linear / root / root_int / log')
     parser.add_argument(
         '--train_path',
         type=str,

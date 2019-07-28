@@ -14,7 +14,7 @@ import time
 import pdb
 
 from jma_pytorch_dataset import *
-from regularizer import *
+from scaler import *
 from convolution_lstm_mod import *
 from test_persistence import *
 from utils import Logger
@@ -39,11 +39,11 @@ if __name__ == '__main__':
     logfile.write('Start time:'+time.ctime()+'\n')
     tstart = time.time()
     
-    # prepare regularizer for data
+    # prepare scaler for data
     if opt.data_scaling == 'linear':
-        reg = LinearRegularizer()
+        scl = LinearScaler()
     elif opt.data_scaling == 'log':
-        reg = LogRegularizer()
+        scl = LogScaler()
         
     # loading datasets (we only need testation data)
     test_dataset = JMARadarDataset(root_dir=opt.data_path,
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # Test for Persistence Forecast
     loss_fn = torch.nn.MSELoss()
     test_persistence(test_loader,loss_fn,
-                     test_logger,opt,reg)
+                     test_logger,opt,scl)
 
     # output elapsed time
     logfile.write('End time: '+time.ctime()+'\n')

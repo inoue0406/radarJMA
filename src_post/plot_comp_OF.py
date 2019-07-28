@@ -56,8 +56,8 @@ def plot_comp_prediction(data_path,filelist,batch_size,tdim_use,
     sample_batched = data.dataloader.default_collate([valid_dataset[i] for i in indices])
 
     # apply the trained model to the data
-    input = Variable(sample_batched['past']).cpu()
-    target = Variable(sample_batched['future']).cpu()
+    input = Variable(sample_batched['past'].float()).cpu()
+    target = Variable(sample_batched['future'].float()).cpu()
     # prediction by optical flow
     output = target.clone()
     for n in range(input.data.shape[0]):

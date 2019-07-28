@@ -5,7 +5,6 @@ import torch.utils.data as data
 import torchvision.transforms as transforms
 
 from jma_pytorch_dataset import *
-from regularizer import *
 from convolution_lstm_mod import *
 from utils import AverageMeter, Logger
 from criteria_precip import *
@@ -16,7 +15,7 @@ from criteria_precip import *
 # Training
 # --------------------------
 
-def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logger,train_batch_logger,opt,reg):
+def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logger,train_batch_logger,opt,scl):
     
     print('train at epoch {}'.format(epoch+1))
 
@@ -36,8 +35,8 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
     for i_batch, sample_batched in enumerate(train_loader):
         #print(i_batch, sample_batched['past'].size(),
         #    sample_batched['future'].size())
-        input = Variable(reg.fwd(sample_batched['past'])).cuda()
-        target = Variable(reg.fwd(sample_batched['future'])).cuda()
+        input = Variable(scl.fwd(sample_batched['past'].float())).cuda()
+        target = Variable(scl.fwd(sample_batched['future'].float())).cuda()
         
         # Forward + Backward + Optimize
         optimizer.zero_grad()
@@ -48,8 +47,8 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
         # for logging
         losses.update(loss.item(), input.size(0))
         # apply evaluation metric
-        Xtrue = reg.inv(target.data.cpu().numpy())
-        Xmodel = reg.inv(output.data.cpu().numpy())
+        Xtrue = scl.inv(target.data.cpu().numpy())
+        Xmodel = scl.inv(output.data.cpu().numpy())
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,
                                                                   th=opt.eval_threshold[0])
         FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold[0],win=10)
@@ -113,7 +112,7 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
 # Validation
 # --------------------------
 
-def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt,reg):
+def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt,scl):
     print('validation at epoch {}'.format(epoch+1))
     
     losses = AverageMeter()
@@ -133,8 +132,8 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt,reg
     model.eval()
 
     for i_batch, sample_batched in enumerate(valid_loader):
-        input = Variable(reg.fwd(sample_batched['past'])).cuda()
-        target = Variable(reg.fwd(sample_batched['future'])).cuda()
+        input = Variable(scl.fwd(sample_batched['past'].float())).cuda()
+        target = Variable(scl.fwd(sample_batched['future'].float())).cuda()
         
         # Forward
         output = model(input)
@@ -144,8 +143,8 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt,reg
         losses.update(loss.item(), input.size(0))
         
         # apply evaluation metric
-        Xtrue = reg.inv(target.data.cpu().numpy())
-        Xmodel = reg.inv(output.data.cpu().numpy())
+        Xtrue = scl.inv(target.data.cpu().numpy())
+        Xmodel = scl.inv(output.data.cpu().numpy())
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,
                                                                   th=opt.eval_threshold[0])
         FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold[0],win=10)
@@ -186,7 +185,7 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt,reg
 # Test
 # --------------------------
 
-def test_CLSTM_EP(test_loader,model,loss_fn,opt,reg,threshold):
+def test_CLSTM_EP(test_loader,model,loss_fn,opt,scl,threshold):
     print('Testing for the model')
     
     # initialize
@@ -204,16 +203,16 @@ def test_CLSTM_EP(test_loader,model,loss_fn,opt,reg,threshold):
     model.eval()
 
     for i_batch, sample_batched in enumerate(test_loader):
-        input = Variable(reg.fwd(sample_batched['past'])).cuda()
-        target = Variable(reg.fwd(sample_batched['future'])).cuda()
+        input = Variable(scl.fwd(sample_batched['past'].float())).cuda()
+        target = Variable(scl.fwd(sample_batched['future'].float())).cuda()
         
         # Forward
         output = model(input)
         loss = loss_fn(output, target)
         
         # apply evaluation metric
-        Xtrue = reg.inv(target.data.cpu().numpy())
-        Xmodel = reg.inv(output.data.cpu().numpy())
+        Xtrue = scl.inv(target.data.cpu().numpy())
+        Xmodel = scl.inv(output.data.cpu().numpy())
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,
                                                                   th=threshold)
         FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=threshold,win=10)

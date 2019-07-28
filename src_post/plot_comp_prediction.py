@@ -22,7 +22,7 @@ path = os.path.join('../src')
 sys.path.append(path)
 
 from jma_pytorch_dataset import *
-from regularizer import *
+from scaler import *
 from convolution_lstm_mod import *
 from train_valid_epoch import *
 from colormap_JMA import Colormap_JMA
@@ -37,7 +37,7 @@ def mod_str_interval(inte_str):
 
 # plot comparison of predicted vs ground truth
 def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
-                         df_sampled,pic_path,reg,case,mode='png_whole'):
+                         df_sampled,pic_path,scl,case,mode='png_whole'):
     # create pic save dir
     if not os.path.exists(pic_path):
         os.mkdir(pic_path)
@@ -65,8 +65,8 @@ def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
             print("skipped batch:",i_batch)
             continue
         # apply the trained model to the data
-        input = Variable(reg.fwd(sample_batched['past'])).cuda()
-        target = Variable(reg.fwd(sample_batched['future'])).cuda()
+        input = Variable(scl.fwd(sample_batched['past'])).cuda()
+        target = Variable(scl.fwd(sample_batched['future'])).cuda()
         #input = Variable(sample_batched['past']).cpu()
         #target = Variable(sample_batched['future']).cpu()
         output = convlstm(input)
@@ -78,9 +78,9 @@ def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
                 continue
             # convert to cpu
             pic = target[n,:,0,:,:].cpu()
-            pic_tg = reg.inv(pic.data.numpy())
+            pic_tg = scl.inv(pic.data.numpy())
             pic = output[n,:,0,:,:].cpu()
-            pic_pred = reg.inv(pic.data.numpy())
+            pic_pred = scl.inv(pic.data.numpy())
             # print
             print('Plotting: ',fname,np.max(pic_tg),np.max(pic_pred))
             # plot
@@ -167,13 +167,17 @@ if __name__ == '__main__':
     model_fname = case + '/trained_CLSTM.model'
     pic_path = case + '/png/'
 
-    scaling = 'linear'
+    scaling = 'root_int'
     
-    # prepare regularizer for data
-    if scaling == 'linear':
-        reg = LinearRegularizer()
-    elif scaling == 'log':
-        reg = LogRegularizer()
+    # prepare scaler for data
+    if opt.data_scaling == 'linear':
+        scl = LinearScaler()
+    if opt.data_scaling == 'root':
+        scl = RootScaler()
+    if opt.data_scaling == 'root_int':
+        scl = RootIntScaler()
+    elif opt.data_scaling == 'log':
+        scl = LogScaler()
 
     # samples to be plotted
     sample_path = '../data/sampled_forplot_3day_JMARadar.csv'
@@ -184,6 +188,6 @@ if __name__ == '__main__':
     print(df_sampled)
     
     plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
-                         df_sampled,pic_path,reg,case,mode='png_ind')
+                         df_sampled,pic_path,scl,case,mode='png_ind')
 
 

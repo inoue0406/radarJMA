@@ -11,7 +11,7 @@ from criteria_precip import *
 
 # testing for "Persistence" forecast 
             
-def test_persistence(test_loader,loss_fn,test_logger,opt,reg):
+def test_persistence(test_loader,loss_fn,test_logger,opt,scl):
     print('Test for persistence forecast')
     
     losses = AverageMeter()
@@ -28,8 +28,8 @@ def test_persistence(test_loader,loss_fn,test_logger,opt,reg):
     FSS_t_all = np.empty((0,opt.tdim_use),float)
 
     for i_batch, sample_batched in enumerate(test_loader):
-        input = Variable(reg.fwd(sample_batched['past'])).cpu()
-        target = Variable(reg.fwd(sample_batched['future'])).cpu()
+        input = Variable(scl.fwd(sample_batched['past'].float())).cpu()
+        target = Variable(scl.fwd(sample_batched['future'].float())).cpu()
         
         # Prediction by Persistence
         output = target.clone()
@@ -46,8 +46,8 @@ def test_persistence(test_loader,loss_fn,test_logger,opt,reg):
         losses.update(loss.item(), input.size(0))
         
         # apply evaluation metric
-        Xtrue = reg.inv(target.data.cpu().numpy())
-        Xmodel = reg.inv(output.data.cpu().numpy())
+        Xtrue = scl.inv(target.data.cpu().numpy())
+        Xmodel = scl.inv(output.data.cpu().numpy())
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,th=opt.eval_threshold)
         FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold,win=10)
         # stat

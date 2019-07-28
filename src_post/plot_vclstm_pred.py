@@ -23,7 +23,7 @@ path = os.path.join('../src')
 sys.path.append(path)
 
 from jma_pytorch_dataset import *
-from regularizer import *
+from scaler import *
 from convolution_lstm_mod import *
 from train_valid_epoch import *
 from colormap_JMA import Colormap_JMA
@@ -99,7 +99,7 @@ def plot_png_ind(fname,pic_tg,pic_pred,df_sampled,irand):
 
 # plot comparison of predicted vs ground truth
 def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
-                         df_sampled,pic_path,reg,mode='png_whole',rand_try=1):
+                         df_sampled,pic_path,scl,mode='png_whole',rand_try=1):
     # create pic save dir
     if not os.path.exists(pic_path):
         os.mkdir(pic_path)
@@ -130,12 +130,12 @@ def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
 
         for irand in range(rand_try):
             # random prediction usning vae
-            sample_all = torch.cat([sample_batched['past'][:,:,0,:,:],
+            sample_all = torch.cat([sample_batched['past'][:,:,0,:,:].float(),
                                     torch.zeros(sample_batched['past'][:,:,0,:,:].shape)],
                                    dim=1)
-            in_vae = Variable(reg.fwd(sample_all)).cuda()
-            in_lstm = Variable(reg.fwd(sample_batched['past'])).cuda()
-            target = Variable(reg.fwd(sample_batched['future'])).cuda()
+            in_vae = Variable(scl.fwd(sample_all)).cuda()
+            in_lstm = Variable(scl.fwd(sample_batched['past'].float())).cuda()
+            target = Variable(scl.fwd(sample_batched['future'].float())).cuda()
         
             # Forward
             output, mu, logvar = model(in_vae,in_lstm)
@@ -147,9 +147,9 @@ def plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
                     continue
                 # convert to cpu
                 pic = target[n,:,0,:,:].cpu()
-                pic_tg = reg.inv(pic.data.numpy())
+                pic_tg = scl.inv(pic.data.numpy())
                 pic = output[n,:,0,:,:].cpu()
-                pic_pred = reg.inv(pic.data.numpy())
+                pic_pred = scl.inv(pic.data.numpy())
                 # print
                 print('Plotting: ',fname,np.max(pic_tg),np.max(pic_pred))
                 # plot
@@ -172,11 +172,15 @@ if __name__ == '__main__':
 
     scaling = 'linear'
     
-    # prepare regularizer for data
-    if scaling == 'linear':
-        reg = LinearRegularizer()
-    elif scaling == 'log':
-        reg = LogRegularizer()
+    # prepare scaler for data
+    if opt.data_scaling == 'linear':
+        scl = LinearScaler()
+    if opt.data_scaling == 'root':
+        scl = RootScaler()
+    if opt.data_scaling == 'root_int':
+        scl = RootIntScaler()
+    elif opt.data_scaling == 'log':
+        scl = LogScaler()
 
     # samples to be plotted
     sample_path = '../data/sampled_forplot_one_JMARadar.csv'
@@ -187,6 +191,6 @@ if __name__ == '__main__':
     print(df_sampled)
     
     plot_comp_prediction(data_path,filelist,model_fname,batch_size,tdim_use,
-                         df_sampled,pic_path,reg,mode='png_ind',rand_try=10)
+                         df_sampled,pic_path,scl,mode='png_ind',rand_try=10)
 
 

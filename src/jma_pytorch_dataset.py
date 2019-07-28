@@ -34,15 +34,14 @@ class JMARadarDataset(data.Dataset):
         h5_name_X = os.path.join(self.root_dir, self.df_fnames.ix[index, 'fname'])
         h5file = h5py.File(h5_name_X,'r')
         rain_X = h5file['R'][()]
-        rain_X = np.maximum(rain_X,0.0) # replace negative value with 0
-        #rain_X = rain_X[:,None,:,:] # add "channel" dimension as 1
+        rain_X = np.maximum(rain_X,0) # replace negative value with 0
         rain_X = rain_X[-self.tdim_use:,None,:,:] # add "channel" dimension as 1
         h5file.close()
         # read Y
         h5_name_Y = os.path.join(self.root_dir, self.df_fnames.ix[index, 'fnext'])
         h5file = h5py.File(h5_name_Y,'r')
         rain_Y = h5file['R'][()]
-        rain_Y = np.maximum(rain_Y,0.0) # replace negative value with 0
+        rain_Y = np.maximum(rain_Y,0) # replace negative value with 0
         rain_Y = rain_Y[:self.tdim_use,None,:,:] # add "channel" dimension as 1
         h5file.close()
         # save

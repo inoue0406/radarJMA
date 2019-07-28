@@ -65,9 +65,9 @@ def test_RMpred(test_loader,loss_fn,test_logger,opt):
     for i_batch, sample_batched in enumerate(test_loader):
         #if i_batch < 51:
         #    continue
-        input = Variable(sample_batched['past']).cpu() 
-        target = Variable(sample_batched['future']).cpu()
-         # note that no regularization is needed here, since it is taken care by RM_predictor
+        input = Variable(sample_batched['past'].float()).cpu() 
+        target = Variable(sample_batched['future'].float()).cpu()
+         # note that no scaling is needed here, since it is taken care by RM_predictor
 
         print('batch:',i_batch,'\n')
         # Prediction by Persistence

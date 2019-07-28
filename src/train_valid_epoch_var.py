@@ -6,7 +6,6 @@ import torchvision.transforms as transforms
 from torch.nn import functional as F
 
 from jma_pytorch_dataset import *
-from regularizer import *
 from convolution_lstm_mod import *
 from utils import AverageMeter, Logger
 from criteria_precip import *
@@ -29,7 +28,7 @@ def loss_function(recon_x, x, mu, logvar):
 # Training
 # --------------------------
 
-def train_epoch(epoch,num_epochs,train_loader,model,optimizer,train_logger,train_batch_logger,opt,reg):
+def train_epoch(epoch,num_epochs,train_loader,model,optimizer,train_logger,train_batch_logger,opt,scl):
     
     print('train at epoch {}'.format(epoch+1))
 
@@ -50,13 +49,13 @@ def train_epoch(epoch,num_epochs,train_loader,model,optimizer,train_logger,train
         #print(i_batch, sample_batched['past'].size(),
         #    sample_batched['future'].size())
         # for VAE, concatenate past&future data
-        sample_all = torch.cat([sample_batched['past'][:,:,0,:,:],
-                                sample_batched['future'][:,:,0,:,:]],
+        sample_all = torch.cat([sample_batched['past'][:,:,0,:,:].float(),
+                                sample_batched['future'][:,:,0,:,:].float()],
                                dim=1)
-        in_vae = Variable(reg.fwd(sample_all)).cuda()
+        in_vae = Variable(scl.fwd(sample_all)).cuda()
         #
-        in_lstm = Variable(reg.fwd(sample_batched['past'])).cuda()
-        target = Variable(reg.fwd(sample_batched['future'])).cuda()
+        in_lstm = Variable(scl.fwd(sample_batched['past'].float())).cuda()
+        target = Variable(scl.fwd(sample_batched['future'].float())).cuda()
         
         # Forward + Backward + Optimize
         optimizer.zero_grad()
@@ -67,8 +66,8 @@ def train_epoch(epoch,num_epochs,train_loader,model,optimizer,train_logger,train
         # for logging
         losses.update(loss.item(), in_lstm.size(0))
         # apply evaluation metric
-        Xtrue = reg.inv(target.data.cpu().numpy())
-        Xmodel = reg.inv(output.data.cpu().numpy())
+        Xtrue = scl.inv(target.data.cpu().numpy())
+        Xmodel = scl.inv(output.data.cpu().numpy())
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,
                                                                   th=opt.eval_threshold[0])
         FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold[0],win=10)
@@ -132,7 +131,7 @@ def train_epoch(epoch,num_epochs,train_loader,model,optimizer,train_logger,train
 # Validation
 # --------------------------
 
-def valid_epoch(epoch,num_epochs,valid_loader,model,valid_logger,opt,reg):
+def valid_epoch(epoch,num_epochs,valid_loader,model,valid_logger,opt,scl):
     print('validation at epoch {}'.format(epoch+1))
     
     losses = AverageMeter()
@@ -153,12 +152,12 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,valid_logger,opt,reg):
 
     for i_batch, sample_batched in enumerate(valid_loader):
         # put zero for future data
-        sample_all = torch.cat([sample_batched['past'][:,:,0,:,:],
+        sample_all = torch.cat([sample_batched['past'][:,:,0,:,:].float(),
                                 torch.zeros(sample_batched['past'][:,:,0,:,:].shape)],
                                dim=1)
-        in_vae = Variable(reg.fwd(sample_all)).cuda()
-        in_lstm = Variable(reg.fwd(sample_batched['past'])).cuda()
-        target = Variable(reg.fwd(sample_batched['future'])).cuda()
+        in_vae = Variable(scl.fwd(sample_all)).cuda()
+        in_lstm = Variable(scl.fwd(sample_batched['past'].float())).cuda()
+        target = Variable(scl.fwd(sample_batched['future'].float())).cuda()
         
         # Forward
         output, mu, logvar = model(in_vae,in_lstm)
@@ -168,8 +167,8 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,valid_logger,opt,reg):
         losses.update(loss.item(), in_lstm.size(0))
         
         # apply evaluation metric
-        Xtrue = reg.inv(target.data.cpu().numpy())
-        Xmodel = reg.inv(output.data.cpu().numpy())
+        Xtrue = scl.inv(target.data.cpu().numpy())
+        Xmodel = scl.inv(output.data.cpu().numpy())
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,
                                                                   th=opt.eval_threshold[0])
         FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold[0],win=10)
@@ -209,7 +208,7 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,valid_logger,opt,reg):
 # Test
 # --------------------------
 
-def test_CLSTM_EP(test_loader,model,opt,reg,threshold):
+def test_CLSTM_EP(test_loader,model,opt,scl,threshold):
     print('Testing for the model')
     
     # initialize
@@ -228,20 +227,20 @@ def test_CLSTM_EP(test_loader,model,opt,reg,threshold):
 
     for i_batch, sample_batched in enumerate(test_loader):
         # put zero for future data
-        sample_all = torch.cat([sample_batched['past'][:,:,0,:,:],
+        sample_all = torch.cat([sample_batched['past'][:,:,0,:,:].float(),
                                 torch.zeros(sample_batched['past'][:,:,0,:,:].shape)],
                                dim=1)
-        in_vae = Variable(reg.fwd(sample_all)).cuda()
-        in_lstm = Variable(reg.fwd(sample_batched['past'])).cuda()
-        target = Variable(reg.fwd(sample_batched['future'])).cuda()
+        in_vae = Variable(scl.fwd(sample_all)).cuda()
+        in_lstm = Variable(scl.fwd(sample_batched['past'].float())).cuda()
+        target = Variable(scl.fwd(sample_batched['future'].float())).cuda()
         
         # Forward
         output, mu, logvar = model(in_vae,in_lstm)
         loss = loss_function(output, target, mu, logvar)
         
         # apply evaluation metric
-        Xtrue = reg.inv(target.data.cpu().numpy())
-        Xmodel = reg.inv(output.data.cpu().numpy())
+        Xtrue = scl.inv(target.data.cpu().numpy())
+        Xmodel = scl.inv(output.data.cpu().numpy())
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,
                                                                   th=threshold)
         FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=threshold,win=10)
