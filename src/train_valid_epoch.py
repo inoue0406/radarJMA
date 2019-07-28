@@ -47,11 +47,14 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
         # for logging
         losses.update(loss.item(), input.size(0))
         # apply evaluation metric
-        Xtrue = scl.inv(target.data.cpu().numpy())
-        Xmodel = scl.inv(output.data.cpu().numpy())
+        # "scl.inv" is not applied here for speed-up
+        Xtrue = target.data.cpu().numpy()
+        Xmodel = output.data.cpu().numpy()
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,
                                                                   th=opt.eval_threshold[0])
-        FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold[0],win=10)
+        # skip since it's slow
+        #FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold[0],win=10)
+        FSS_t = np.zeros(SumSE.shape)
 
         RMSE,CSI,FAR,POD,Cor,MaxMSE,FSS_mean = MetricRainfall(SumSE,hit,miss,falarm,
                                                               m_xy,m_xx,m_yy,
@@ -143,8 +146,9 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt,scl
         losses.update(loss.item(), input.size(0))
         
         # apply evaluation metric
-        Xtrue = scl.inv(target.data.cpu().numpy())
-        Xmodel = scl.inv(output.data.cpu().numpy())
+        # "scl.inv" is not applied here for speed-up
+        Xtrue = target.data.cpu().numpy()
+        Xmodel = output.data.cpu().numpy()
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,
                                                                   th=opt.eval_threshold[0])
         FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold[0],win=10)

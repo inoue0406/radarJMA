@@ -170,13 +170,13 @@ if __name__ == '__main__':
     scaling = 'root_int'
     
     # prepare scaler for data
-    if opt.data_scaling == 'linear':
+    if data_scaling == 'linear':
         scl = LinearScaler()
-    if opt.data_scaling == 'root':
+    if data_scaling == 'root':
         scl = RootScaler()
-    if opt.data_scaling == 'root_int':
+    if data_scaling == 'root_int':
         scl = RootIntScaler()
-    elif opt.data_scaling == 'log':
+    elif data_scaling == 'log':
         scl = LogScaler()
 
     # samples to be plotted

@@ -74,10 +74,12 @@ if __name__ == '__main__':
     
         train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                    batch_size=opt.batch_size,
+                                                   num_workers=4,
                                                    shuffle=True)
     
         valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset,
                                                    batch_size=opt.batch_size,
+                                                   num_workers=4,
                                                    shuffle=False)
 
         if opt.model_name == 'clstm':
@@ -85,12 +87,12 @@ if __name__ == '__main__':
             from convolution_lstm_mod import *
             convlstm = CLSTM_EP(input_channels=1, hidden_channels=opt.hidden_channels,
                                 kernel_size=opt.kernel_size).cuda()
-        elif opt.model_name == 'clstm-skip':
+        elif opt.model_name == 'clstm_skip':
             # convolutional lstm with skip connection
             from convolution_lstm_mod import *
             convlstm = CLSTM_EP3(input_channels=1, hidden_channels=opt.hidden_channels,
                                 kernel_size=opt.kernel_size).cuda()
-        elif opt.model_name == 'clstm-multi':
+        elif opt.model_name == 'clstm_multi':
             # convolutional lstm with multiple layers
             from convolution_lstm_multi import *
             convlstm = CLSTM_EP_MUL(input_channels=1, hidden_channels=opt.hidden_channels,
