@@ -167,7 +167,7 @@ if __name__ == '__main__':
     model_fname = case + '/trained_CLSTM.model'
     pic_path = case + '/png/'
 
-    scaling = 'root_int'
+    data_scaling = 'linear'
     
     # prepare scaler for data
     if data_scaling == 'linear':

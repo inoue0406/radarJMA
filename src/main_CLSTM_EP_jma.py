@@ -4,6 +4,8 @@ import torchvision
 import torch.utils.data as data
 import torchvision.transforms as transforms
 
+import torch.nn.functional as F
+
 import pandas as pd
 import h5py
 import os
@@ -31,6 +33,18 @@ def weighted_MSE_loss(output, target):
            5.0 * torch.mean((mask_10*(output - target))**2)+ \
            10.0 * torch.mean((mask_30*(output - target))**2)+ \
            30.0 * torch.mean((mask_XX*(output - target))**2)
+    return loss
+
+def max_MSE_loss(output, target):
+    # custom loss function weighing heavy rains   
+    mse = torch.mean((output - target)**2)
+    # take max using MaxPool (in order to be differentiable)
+    out2 = output.view(output.shape[0:2] + output.shape[3:5])
+    omax = F.max_pool2d(out2, kernel_size=out2.size()[2:])
+    tgt2 = target.view(target.shape[0:2] + target.shape[3:5])
+    tmax = F.max_pool2d(tgt2, kernel_size=tgt2.size()[2:])
+    maxmse = torch.mean((omax - tmax)**2)
+    loss = 1.0 * mse + 1.0 * maxmse
     return loss
 
 if __name__ == '__main__':
@@ -110,6 +124,8 @@ if __name__ == '__main__':
             loss_fn = torch.nn.MSELoss()
         elif opt.loss_function == 'WeightedMSE':
             loss_fn = weighted_MSE_loss
+        elif opt.loss_function == 'MaxMSE':
+            loss_fn = max_MSE_loss
 
         # Type of optimizers adam/rmsprop
         if opt.optimizer == 'adam':
