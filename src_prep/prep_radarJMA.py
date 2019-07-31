@@ -1,12 +1,10 @@
 # Reading JMA radar data in netcdf format
 # for preprocessing 
 import netCDF4
-import matplotlib.pyplot as plt
 import numpy as np
 import h5py
 
 import glob
-import gzip
 import subprocess
 import sys
 import os.path

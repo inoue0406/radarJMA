@@ -162,7 +162,7 @@ if __name__ == '__main__':
     #case = 'result_20190712_tr_clstm_flatsampled'
     #case = 'result_20190625_clstm_lrdecay07_ep20'
 
-    data_path = '../data/data_h5/'
+    data_path = '../data/data_kanto/'
     filelist = '../data/valid_simple_JMARadar.csv'
     model_fname = case + '/trained_CLSTM.model'
     pic_path = case + '/png/'

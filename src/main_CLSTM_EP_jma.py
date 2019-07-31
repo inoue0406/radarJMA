@@ -35,17 +35,36 @@ def weighted_MSE_loss(output, target):
            30.0 * torch.mean((mask_XX*(output - target))**2)
     return loss
 
-def max_MSE_loss(output, target):
+
+#def max_MSE_loss(output, target):
+#    # custom loss function weighing heavy rains   
+#    mse = torch.mean((output - target)**2)
+#    # take max using MaxPool (in order to be differentiable)
+#    out2 = output.view(output.shape[0:2] + output.shape[3:5])
+#    omax = F.max_pool2d(out2, kernel_size=out2.size()[2:])
+#    tgt2 = target.view(target.shape[0:2] + target.shape[3:5])
+#    tmax = F.max_pool2d(tgt2, kernel_size=tgt2.size()[2:])
+#    maxmse = torch.mean((omax - tmax)**2)
+#    loss = 1.0 * mse + 0.1 * maxmse
+#    return loss
+
+class max_MSE_loss(nn.Module):
     # custom loss function weighing heavy rains   
-    mse = torch.mean((output - target)**2)
-    # take max using MaxPool (in order to be differentiable)
-    out2 = output.view(output.shape[0:2] + output.shape[3:5])
-    omax = F.max_pool2d(out2, kernel_size=out2.size()[2:])
-    tgt2 = target.view(target.shape[0:2] + target.shape[3:5])
-    tmax = F.max_pool2d(tgt2, kernel_size=tgt2.size()[2:])
-    maxmse = torch.mean((omax - tmax)**2)
-    loss = 1.0 * mse + 1.0 * maxmse
-    return loss
+    def __init__(self, weights):
+        super(max_MSE_loss, self).__init__()
+        self.weights = weights
+        assert len(weights) == 2, 'size of weights should be {0}, but given {1}'.format(2,len(weights))
+
+    def forward(self, output, target):
+        mse = torch.mean((output - target)**2)
+        # take max using MaxPool (in order to be differentiable)
+        out2 = output.view(output.shape[0:2] + output.shape[3:5])
+        omax = F.max_pool2d(out2, kernel_size=out2.size()[2:])
+        tgt2 = target.view(target.shape[0:2] + target.shape[3:5])
+        tmax = F.max_pool2d(tgt2, kernel_size=tgt2.size()[2:])
+        maxmse = torch.mean((omax - tmax)**2)
+        loss = self.weights[0] * mse + self.weights[1] * maxmse
+        return loss
 
 if __name__ == '__main__':
    
@@ -125,7 +144,7 @@ if __name__ == '__main__':
         elif opt.loss_function == 'WeightedMSE':
             loss_fn = weighted_MSE_loss
         elif opt.loss_function == 'MaxMSE':
-            loss_fn = max_MSE_loss
+            loss_fn = max_MSE_loss(opt.loss_weights)
 
         # Type of optimizers adam/rmsprop
         if opt.optimizer == 'adam':
