@@ -3,6 +3,7 @@
 #
 import glob
 import sys
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,8 +26,13 @@ if __name__ == '__main__':
     #case = 'result_20190712_tr_clstm_flatsampled'
     pic_path = case + '/png/*dt00.png'
 
+    # create pic save dir
+    if not os.path.exists(case + '/gif'):
+        os.mkdir(case + '/gif')
+
     for infile in sorted(glob.iglob(pic_path)):
-        outgif = infile.replace('dt00.png','.gif')
+        outgif = infile.replace('.h5_dt00.png','.gif')
+        outgif = outgif.replace('png','gif')
         ims = []
         fig=plt.figure(figsize=(16, 8))
         plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
