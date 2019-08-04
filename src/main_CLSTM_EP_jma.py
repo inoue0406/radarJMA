@@ -66,6 +66,37 @@ class max_MSE_loss(nn.Module):
         loss = self.weights[0] * mse + self.weights[1] * maxmse
         return loss
 
+class multi_MSE_loss(nn.Module):
+    # multi scale MSE loss
+    def __init__(self, weights):
+        super(multi_MSE_loss, self).__init__()
+        self.weights = weights
+        assert len(weights) == 4, 'size of weights should be {0}, but given {1}'.format(2,len(weights))
+
+    def forward(self, output, target):
+        mse = torch.mean((output - target)**2)
+        # take max using MaxPool (in order to be differentiable)
+        out2 = output.view(output.shape[0:2] + output.shape[3:5])
+        omax2 = F.max_pool2d(out2, kernel_size=out2.size()[2:])
+        tgt2 = target.view(target.shape[0:2] + target.shape[3:5])
+        tmax2 = F.max_pool2d(tgt2, kernel_size=tgt2.size()[2:])
+        maxmse = torch.mean((omax2 - tmax2)**2)
+        # maxpooing for 20x20 grid
+        out3 = output.view(output.shape[0:2] + output.shape[3:5])
+        omax3 = F.max_pool2d(out3, kernel_size=20, stride=20)
+        tgt3 = target.view(target.shape[0:2] + target.shape[3:5])
+        tmax3 = F.max_pool2d(tgt3, kernel_size=20, stride=20)
+        mse_20 = torch.mean((omax3 - tmax3)**2)
+        # maxpooing for 5x5 grid
+        out4 = output.view(output.shape[0:2] + output.shape[3:5])
+        omax4 = F.max_pool2d(out4, kernel_size=5, stride=5)
+        tgt4 = target.view(target.shape[0:2] + target.shape[3:5])
+        tmax4 = F.max_pool2d(tgt4, kernel_size=5, stride=5)
+        mse_5 = torch.mean((omax4 - tmax4)**2)
+        #import pdb; pdb.set_trace()
+        loss = self.weights[0]*mse + self.weights[1]*mse_5 + self.weights[2]*mse_20 + self.weights[3]*maxmse
+        return loss
+
 if __name__ == '__main__':
    
     # parse command-line options
@@ -145,6 +176,8 @@ if __name__ == '__main__':
             loss_fn = weighted_MSE_loss
         elif opt.loss_function == 'MaxMSE':
             loss_fn = max_MSE_loss(opt.loss_weights)
+        elif opt.loss_function == 'MultiMSE':
+            loss_fn = multi_MSE_loss(opt.loss_weights)
 
         # Type of optimizers adam/rmsprop
         if opt.optimizer == 'adam':

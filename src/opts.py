@@ -55,7 +55,7 @@ def parse_opts():
         '--loss_function',
         default='MSE',
         type=str,
-        help='loss function MSE or WeightedMSE or MaxMSE')
+        help='loss function MSE or WeightedMSE or MaxMSE or MultiMSE')
     parser.add_argument(
         '--loss_weights',
         default=[1.0,1.0],
