@@ -12,18 +12,26 @@ df_s[2,] <- c("result_20190530_rainym_th05_fss",1,1,1,"rainymotion")
 df_s[3,] <- c("result_20190625_clstm_lrdecay07_ep20",2,1,1,"convLSTM-lrdecay")
 #df_s[4,] <- c("result_20190704_mclstm_local_rerun_ep20",3,1,1,"convLSTM-2lyr2")
 #df_s[5,] <- c("result_20190708_clstm_weightedmse",4,1,1,"convLSTM-wloss")
-df_s[4,] <- c("result_20190709_clstm_flatsampled",2,1,2,"convLSTM-flatsampled")
-df_s[5,] <- c("result_20190710_clstm_alljapan",3,1,2,"convLSTM-alljapan")
-df_s[6,] <- c("result_20190712_tr_clstm_flatsampled",3,1,1,"convLSTM-transfer")
-df_s[7,] <- c("result_20190715_clstm_alljapan_2yr",4,1,2,"convLSTM-alljapan2")
-df_s[8,] <- c("result_20190716_clstm_tr_2yr_flat",4,1,1,"convLSTM-transfer2")
+#df_s[4,] <- c("result_20190709_clstm_flatsampled",2,1,2,"convLSTM-flatsampled")
+#df_s[5,] <- c("result_20190710_clstm_alljapan",3,1,2,"convLSTM-alljapan")
+#df_s[6,] <- c("result_20190712_tr_clstm_flatsampled",3,1,1,"convLSTM-transfer")
+#df_s[7,] <- c("result_20190715_clstm_alljapan_2yr",4,1,2,"convLSTM-alljapan2")
+#df_s[8,] <- c("result_20190716_clstm_tr_2yr_flat",4,1,1,"convLSTM-transfer2")
+#df_s[4,] <- c("result_20190728_clstm_loadmemory_ep20",3,1,1,"convLSTM-roottransform")
+#df_s[5,] <- c("result_20190710_clstm_alljapan",3,1,2,"convLSTM-alljapan")
+#df_s[4,] <- c("result_20190728_clstm_tstskip_ep20",3,1,1,"convLSTM-skip")
+df_s[4,] <- c("result_20190802_clstm_tstskip_re_ep20",3,1,1,"convLSTM-skip-re")
+#df_s[6,] <- c("result_20190801_clstm_skip_maxmse3_ep20",4,1,1,"convLSTM-skip+max3")
+df_s[5,] <- c("result_20190802_clstm_skip_maxmse3_re_ep20",4,1,1,"convLSTM-skip+m3-re")
+df_s[6,] <- c("result_20190805_clstm_skip_multimse3_ep20",4,1,2,"convLSTM-skip+multi")
+
 # 
 df_s$color <- as.integer(df_s$color)
 df_s$lwd <- as.integer(df_s$lwd)
 df_s$lty <- as.integer(df_s$lty)
 
 #
-date = "190718_alljapan"
+date = "190806_maxmse3_re"
 
 # 
 dir.create(sprintf("png/%s",date),showWarnings = FALSE)
