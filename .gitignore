@@ -1,6 +1,6 @@
 */__pycache__/
 test/
-data/
+data*/
 data
 run/log*
 run/result*

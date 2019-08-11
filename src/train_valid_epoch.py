@@ -1,4 +1,4 @@
-import torch 
+import torch
 import torchvision
 import numpy as np
 import torch.utils.data as data
@@ -8,6 +8,8 @@ from jma_pytorch_dataset import *
 from convolution_lstm_mod import *
 from utils import AverageMeter, Logger
 from criteria_precip import *
+# for debug
+from tools_mem import *
 
 # training/validation for one epoch
 
@@ -46,6 +48,9 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
         optimizer.step()
         # for logging
         losses.update(loss.item(), input.size(0))
+        #cpuStats()
+        #memReport()
+        #import pdb; pdb.set_trace()
         # apply evaluation metric
         # "scl.inv" is not applied here for speed-up
         Xtrue = target.data.cpu().numpy()
