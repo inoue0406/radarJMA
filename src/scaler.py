@@ -47,7 +47,7 @@ class LogScaler():
 
 class LinearScaler():
     # class for linear scaling of rainfall values
-    def __init__(self):
+    def __init__(self,rmax=201.0):
         self.rmax = 201.0 # max rainfall intensity
 
     def fwd(self,X):
