@@ -20,12 +20,69 @@ from utils import Logger
 from opts import parse_opts
 from loss_funcs import *
 
+import skimage.measure
+
 def count_parameters(model,f):
     for name,p in model.named_parameters():
         f.write("name,"+name+", Trainable, "+str(p.requires_grad)+",#params, "+str(p.numel())+"\n")
     Nparam = sum(p.numel() for p in model.parameters())
     Ntrain = sum(p.numel() for p in model.parameters() if p.requires_grad)
     f.write("Number of params:"+str(Nparam)+", Trainable parameters:"+str(Ntrain)+"\n")
+
+# test code for mnist
+# calc MSE, MAE, SSIM
+def test_CLSTM_EP_mnist(test_loader,model,loss_fn,opt,scl):
+    print('Testing for the model')
+    
+    # initialize
+    MSE_all = np.empty((0,opt.tdim_use),float)
+    MAE_all = np.empty((0,opt.tdim_use),float)
+    SSIM_all = np.empty((0,opt.tdim_use),float)
+
+    # evaluation mode
+    model.eval()
+
+    for i_batch, sample_batched in enumerate(test_loader):
+        input = Variable(scl.fwd(sample_batched['past'].float())).cuda()
+        target = Variable(scl.fwd(sample_batched['future'].float())).cuda()
+        
+        # Forward
+        output = model(input)
+        loss = loss_fn(output, target)
+        
+        # apply evaluation metric
+        Xtrue = scl.inv(target.data.cpu().numpy())
+        Xmodel = scl.inv(output.data.cpu().numpy())
+
+        # metric in (batch x time) dim
+        MSE = ((Xmodel/255.0-Xtrue/255.0)**2).mean(axis=(2,3,4))
+        MAE = (np.abs(Xmodel/255.0-Xtrue/255.0)).mean(axis=(2,3,4))
+        # SSIM index
+        SSIM = np.zeros((Xmodel.shape[0],Xmodel.shape[1]))
+        for k in range(Xmodel.shape[0]):
+            for l in range(Xmodel.shape[1]):
+                SSIM[k,l] = skimage.measure.compare_ssim(Xmodel[k,l,0,:,:],Xtrue[k,l,0,:,:])
+        
+        MSE_all = np.append(MSE_all,MSE,axis=0)
+        MAE_all = np.append(MAE_all,MAE,axis=0)
+        SSIM_all = np.append(SSIM_all,SSIM,axis=0)
+        
+        #if (i_batch+1) % 100 == 0:
+        if (i_batch+1) % 1 == 0:
+            print ('Test Iter [%d/%d] Loss: %.4e' 
+                   %(i_batch+1, len(test_loader.dataset)//test_loader.batch_size, loss.item()))
+            
+    # save evaluated metric as csv file
+    tpred = (np.arange(opt.tdim_use)+1.0)
+    df = pd.DataFrame({'tpred_min':tpred,
+                       'MSE':MSE_all.mean(axis=0),
+                       'MAE':MAE_all.mean(axis=0),
+                       'SSIM':SSIM_all.mean(axis=0)})
+    df.to_csv(os.path.join(opt.result_path,
+                           'test_evaluation_predtime.csv'))
+    # free gpu memory
+    del input,target,output,loss
+
     
 if __name__ == '__main__':
    
@@ -165,10 +222,12 @@ if __name__ == '__main__':
         
         # testing for the trained model
         for threshold in opt.eval_threshold:
-            test_CLSTM_EP(test_loader,convlstm,loss_fn,opt,scl,threshold)
+            test_CLSTM_EP_mnist(test_loader,convlstm,loss_fn,opt,scl)
 
     # output elapsed time
     logfile.write('End time: '+time.ctime()+'\n')
     tend = time.time()
     tdiff = float(tend-tstart)/3600.0
     logfile.write('Elapsed time[hours]: %f \n' % tdiff)
+
+
