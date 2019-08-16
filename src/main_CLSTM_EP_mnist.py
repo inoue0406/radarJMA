@@ -155,7 +155,7 @@ if __name__ == '__main__':
             loss_fn = torch.nn.MSELoss()
             
         # prepare loader
-        valid_dataset = MNISTDataset(data_file='../data_mnist/mnist/mnist_test_2000_data.hkl',
+        test_dataset = MNISTDataset(data_file='../data_mnist/mnist/mnist_test_2000_data.hkl',
                                      source_file='../data_mnist/mnist/mnist_test_2000_sources.hkl',
                                      tdim_use=opt.tdim_use,
                                      transform=None)
