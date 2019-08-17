@@ -158,6 +158,8 @@ if __name__ == '__main__':
         
         if opt.loss_function == 'MSE':
             loss_fn = torch.nn.MSELoss()
+        elif opt.loss_function == 'BCE': # binary cross entropy
+            loss_fn = torch.nn.BCELoss()
         elif opt.loss_function == 'WeightedMSE':
             loss_fn = weighted_MSE_loss
         elif opt.loss_function == 'MaxMSE':

@@ -84,7 +84,7 @@ def plot_comp_prediction(model_fname,batch_size,tdim_use,
                     # target
                     plt.subplot(2,10,pos)
                     im = plt.imshow(pic_tg[id,:,:],vmin=0,vmax=50,cmap=cm,origin='upper')
-                    plt.title("true:"+dtstr+"min")
+                    plt.title("true:"+dtstr+"steps")
                     plt.grid()
                     # predicted
                     plt.subplot(2,10,pos+10)

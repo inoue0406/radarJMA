@@ -182,6 +182,8 @@ class CLSTM_EP3(nn.Module):
             #xout[:,it,:,:,:] = self.lastconv(hp)
             # skip connection
             xout[:,it,:,:,:] = self.lastconv(hp) + xout_prev
+            # tmp sigmoid when BCE
+            #xout[:,it,:,:,:] = torch.sigmoid(self.lastconv(hp) + xout_prev)
             xout_prev = xout[:,it,:,:,:].clone()
         return xout
 
