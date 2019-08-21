@@ -61,8 +61,7 @@ def test_CLSTM_EP_mnist(test_loader,model,loss_fn,opt,scl):
         SSIM = np.zeros((Xmodel.shape[0],Xmodel.shape[1]))
         for k in range(Xmodel.shape[0]):
             for l in range(Xmodel.shape[1]):
-                SSIM[k,l] = skimage.measure.compare_ssim(Xmodel[k,l,0,:,:],Xtrue[k,l,0,:,:])
-        
+                SSIM[k,l] = skimage.measure.compare_ssim(Xmodel[k,l,0,:,:]/255.0,Xtrue[k,l,0,:,:]/255.0,win_size=3)
         MSE_all = np.append(MSE_all,MSE,axis=0)
         MAE_all = np.append(MAE_all,MAE,axis=0)
         SSIM_all = np.append(SSIM_all,SSIM,axis=0)
