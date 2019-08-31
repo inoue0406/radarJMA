@@ -9,14 +9,11 @@ import subprocess
 import sys
 import os.path
 
-# -----------------------------
-# add "src" as import path
-path = os.path.join('../src')
-sys.path.append(path)
-from regularizer import RootRegularizer
+from scipy.interpolate import RectBivariateSpline
+import matplotlib.pyplot as plt
 
 # extract data from nc file
-def ext_nc_JMA(fname):
+def ext_nc_JMA(fname,nx_out,ny_out):
     #nc = netCDF4.Dataset('../data/2015/01/01/2p-jmaradar5_2015-01-01_0000utc.nc', 'r')
     nc = netCDF4.Dataset(fname, 'r')
     #
@@ -47,28 +44,32 @@ def ext_nc_JMA(fname):
     lon_clip=lons.data[i0:i1]
     lat_clip=lats.data[j0:j1]
     print("rainfall min:max",Rclip.min(),Rclip.max())
+    interp_spline = RectBivariateSpline(np.arange(nx_clip), np.arange(ny_clip), Rclip,kx=1,ky=1,s=0)
+    x2 = np.linspace(0,nx_clip,nx_out)
+    y2 = np.linspace(0,nx_clip,ny_out)
+    Rclip_resize = interp_spline(x2,y2)
+    Rclip_resize = np.maximum(Rclip_resize,0) # replace negative value with 0
+#    plt.imshow(Rclip)
+#    plt.savefig("interp_before.png")
+#    plt.imshow(Rclip_resize) 
+#    plt.savefig("interp_after.png")
+    print("interpolated rainfall min:max",Rclip_resize.min(),Rclip_resize.max())
     # save data
-    return(Rclip)
+    return(Rclip_resize)
 
 # read
-#infile_root = '../data/jma_radar/2015/'
-#infile_root = '../data/jma_radar/2016/'
+infile_root = '../data/jma_radar/2015/'
+infile_root = '../data/jma_radar/2016/'
 infile_root = '../data/jma_radar/2017/'
 print('input dir:',infile_root)
 
 # outfile
-outfile_root = '../data/data_kanto_int/'
+outfile_root = '../data/data_kanto_resize/'
 print('output dir:',infile_root)
 
-# a flag for integer output
-integer_output = True
-#integer_output = False
-
-nx = 200
-ny = 200
+nx = 128
+ny = 128
 nt = 12
-
-reg = RootRegularizer()
 
 #for infile in sorted(glob.iglob(infile_root + '*00utc.nc.gz')):
 for infile in sorted(glob.iglob(infile_root + '/*/*/*00utc.nc.gz')):
@@ -85,17 +86,13 @@ for infile in sorted(glob.iglob(infile_root + '/*/*/*00utc.nc.gz')):
         in_nc=in_zfile.replace('.gz','')
         print('reading nc file:',in_nc)
         if os.path.exists(in_nc):
-            Rclip = ext_nc_JMA(in_nc)
+            Rclip = ext_nc_JMA(in_nc,nx,ny)
         else:
             print('nc file not found!!!',in_nc)
             next
         R1h[i,:,:]=Rclip
         subprocess.run('rm '+in_nc,shell=True)
-    # apply scaling if flag is set
-    if(integer_output):
-        # convert to unsigned integer
-        R1h = reg.fwd(R1h)*255
-        R1h = R1h.astype(np.uint8)
+
     # write to h5 file
     h5fname = infile.split('/')[-1]
     h5fname = h5fname.replace('.nc.gz','.h5')
