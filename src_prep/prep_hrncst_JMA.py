@@ -138,7 +138,6 @@ if __name__ == '__main__':
         print('writing h5 file:',h5fname)
         h5file = h5py.File(outfile_root+h5fname,'w')
         h5file.create_dataset('R',data= R1h)
-        import pdb; pdb.set_trace()
 
 
 
