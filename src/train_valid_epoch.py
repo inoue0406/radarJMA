@@ -23,23 +23,10 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
 
     losses = AverageMeter()
     
-    # initialize
-    SumSE_all = np.empty((0,opt.tdim_use),float)
-    hit_all = np.empty((0,opt.tdim_use),float)
-    miss_all = np.empty((0,opt.tdim_use),float)
-    falarm_all = np.empty((0,opt.tdim_use),float)
-    m_xy_all = np.empty((0,opt.tdim_use),float)
-    m_xx_all = np.empty((0,opt.tdim_use),float)
-    m_yy_all = np.empty((0,opt.tdim_use),float)
-    MaxSE_all = np.empty((0,opt.tdim_use),float)
-    FSS_t_all = np.empty((0,opt.tdim_use),float)
-    
     for i_batch, sample_batched in enumerate(train_loader):
-        #print(i_batch, sample_batched['past'].size(),
-        #    sample_batched['future'].size())
+        #print(i_batch, sample_batched['past'].size(),sample_batched['future'].size())
         input = Variable(scl.fwd(sample_batched['past'].float())).cuda()
         target = Variable(scl.fwd(sample_batched['future'].float())).cuda()
-        #import pdb;pdb.set_trace()
         # Forward + Backward + Optimize
         optimizer.zero_grad()
         output = model(input)
@@ -48,69 +35,25 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
         optimizer.step()
         # for logging
         losses.update(loss.item(), input.size(0))
-        #cpuStats()
-        #memReport()
-        #import pdb; pdb.set_trace()
-        # apply evaluation metric
-        # "scl.inv" is not applied here for speed-up
-        Xtrue = target.data.cpu().numpy()
-        Xmodel = output.data.cpu().numpy()
-        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,
-                                                                  th=opt.eval_threshold[0])
-        # skip since it's slow
-        #FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold[0],win=10)
-        FSS_t = np.zeros(SumSE.shape)
 
-        RMSE,CSI,FAR,POD,Cor,MaxMSE,FSS_mean = MetricRainfall(SumSE,hit,miss,falarm,
-                                                              m_xy,m_xx,m_yy,
-                                                              MaxSE,FSS_t,axis=None)
-
-        SumSE_all = np.append(SumSE_all,SumSE,axis=0)
-        hit_all = np.append(hit_all,hit,axis=0)
-        miss_all = np.append(miss_all,miss,axis=0)
-        falarm_all = np.append(falarm_all,falarm,axis=0)
-        m_xy_all = np.append(m_xy_all,m_xy,axis=0)
-        m_xx_all = np.append(m_xx_all,m_xx,axis=0)
-        m_yy_all = np.append(m_yy_all,m_yy,axis=0)
-        MaxSE_all = np.append(MaxSE_all,MaxSE,axis=0)
-        FSS_t_all = np.append(FSS_t_all,FSS_t,axis=0)
-        
         print('chk lr ',optimizer.param_groups[0]['lr'])
         train_batch_logger.log({
             'epoch': epoch+1,
             'batch': i_batch+1,
             'loss': losses.val,
-            'RMSE': RMSE,
-            'CSI': CSI,
-            'FAR': FAR,
-            'POD': POD,
-            'Cor': Cor, 
-            'MaxMSE': MaxMSE,
-            'FSS_mean': FSS_mean,
             'lr': optimizer.param_groups[0]['lr']
         })
-        # 
+
         if (i_batch+1) % 1 == 0:
             print ('Train Epoch [%d/%d], Iter [%d/%d] Loss: %.4e' 
                    %(epoch+1, num_epochs, i_batch+1, len(train_loader.dataset)//train_loader.batch_size, loss.item()))
 
     # update lr for optimizer
     optimizer.step()
-    
-    # logging for epoch-averaged loss
-    RMSE,CSI,FAR,POD,Cor,MaxMSE,FSS_mean = MetricRainfall(SumSE_all,hit_all,miss_all,falarm_all,
-                                                          m_xy_all,m_xx_all,m_yy_all,
-                                                          MaxSE_all,FSS_t_all,axis=None)
+
     train_logger.log({
         'epoch': epoch,
         'loss': losses.avg,
-        'RMSE': RMSE,
-        'CSI': CSI,
-        'FAR': FAR,
-        'POD': POD,
-        'Cor': Cor,
-        'MaxMSE': MaxMSE,
-        'FSS_mean': FSS_mean,
         'lr': optimizer.param_groups[0]['lr']
     })
     # free gpu memory
@@ -125,17 +68,6 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt,scl
     
     losses = AverageMeter()
         
-    # initialize
-    SumSE_all = np.empty((0,opt.tdim_use),float)
-    hit_all = np.empty((0,opt.tdim_use),float)
-    miss_all = np.empty((0,opt.tdim_use),float)
-    falarm_all = np.empty((0,opt.tdim_use),float)
-    m_xy_all = np.empty((0,opt.tdim_use),float)
-    m_xx_all = np.empty((0,opt.tdim_use),float)
-    m_yy_all = np.empty((0,opt.tdim_use),float)
-    MaxSE_all = np.empty((0,opt.tdim_use),float)
-    FSS_t_all = np.empty((0,opt.tdim_use),float)
-
     # evaluation mode
     model.eval()
 
@@ -149,46 +81,16 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt,scl
 
         # for logging
         losses.update(loss.item(), input.size(0))
-        
-        # apply evaluation metric
-        # "scl.inv" is not applied here for speed-up
-        Xtrue = target.data.cpu().numpy()
-        Xmodel = output.data.cpu().numpy()
-        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,
-                                                                  th=opt.eval_threshold[0])
-        FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold[0],win=10)
-        
-        SumSE_all = np.append(SumSE_all,SumSE,axis=0)
-        hit_all = np.append(hit_all,hit,axis=0)
-        miss_all = np.append(miss_all,miss,axis=0)
-        falarm_all = np.append(falarm_all,falarm,axis=0)
-        m_xy_all = np.append(m_xy_all,m_xy,axis=0)
-        m_xx_all = np.append(m_xx_all,m_xx,axis=0)
-        m_yy_all = np.append(m_yy_all,m_yy,axis=0)
-        MaxSE_all = np.append(MaxSE_all,MaxSE,axis=0)
-        FSS_t_all = np.append(FSS_t_all,FSS_t,axis=0)
-        
-        #if (i_batch+1) % 100 == 0:
+
         if (i_batch+1) % 1 == 0:
             print ('Valid Epoch [%d/%d], Iter [%d/%d] Loss: %.4e' 
                    %(epoch+1, num_epochs, i_batch+1, len(valid_loader.dataset)//valid_loader.batch_size, loss.item()))
-    # logging for epoch-averaged loss
-    RMSE,CSI,FAR,POD,Cor,MaxMSE,FSS_mean = MetricRainfall(SumSE_all,hit_all,miss_all,falarm_all,
-                                                          m_xy_all,m_xx_all,m_yy_all,
-                                                          MaxSE_all,FSS_t_all,axis=None)
+            
     valid_logger.log({
         'epoch': epoch,
-        'loss': losses.avg,
-        'RMSE': RMSE,
-        'CSI': CSI,
-        'FAR': FAR,
-        'POD': POD,
-        'Cor': Cor, 
-        'MaxMSE': MaxMSE,
-        'FSS_mean': FSS_mean})
+        'loss': losses.avg})
     # free gpu memory
     del input,target,output,loss
-
 
 # --------------------------
 # Test
@@ -259,8 +161,4 @@ def test_CLSTM_EP(test_loader,model,loss_fn,opt,scl,threshold):
                            'test_evaluation_predtime_%.2f.csv' % threshold))
     # free gpu memory
     del input,target,output,loss
-
-    
-
-
     

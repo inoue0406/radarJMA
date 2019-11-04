@@ -15,6 +15,7 @@ import pdb
 
 from jma_pytorch_dataset import *
 from scaler import *
+from convolution_lstm_mod import *
 from train_valid_epoch import *
 from utils import Logger
 from opts import parse_opts
@@ -126,13 +127,13 @@ if __name__ == '__main__':
         # Prep logger
         train_logger = Logger(
             os.path.join(opt.result_path, 'train.log'),
-            ['epoch', 'loss', 'RMSE', 'CSI', 'FAR', 'POD', 'Cor','MaxMSE','FSS_mean','lr'])
+            ['epoch', 'loss', 'lr'])
         train_batch_logger = Logger(
             os.path.join(opt.result_path, 'train_batch.log'),
-            ['epoch', 'batch', 'loss', 'RMSE', 'CSI', 'FAR', 'POD', 'Cor','MaxMSE','FSS_mean','lr'])
+            ['epoch', 'batch', 'loss', 'lr'])
         valid_logger = Logger(
             os.path.join(opt.result_path, 'valid.log'),
-            ['epoch', 'loss', 'RMSE', 'CSI', 'FAR', 'POD', 'Cor','MaxMSE','FSS_mean'])
+            ['epoch', 'loss'])
     
         # training 
         for epoch in range(opt.n_epochs):

@@ -116,7 +116,10 @@ if __name__ == '__main__':
     ny = 200
     nt = 7
 
-    for infile in sorted(glob.iglob(infile_root + '/*00utc.nc.gz')):
+    file_list = sorted(glob.iglob(infile_root + '/*00utc.nc.gz'))
+    # restart
+    file_list = file_list[4350:]
+    for infile in file_list:
         # read 1hour data at a time
         # initialize with -999.0
         R1h = np.full((nt,nx,ny),-999.0,dtype=np.float32)
