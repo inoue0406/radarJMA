@@ -15,7 +15,6 @@ import pdb
 
 from jma_pytorch_dataset import *
 from scaler import *
-from convolution_lstm_mod import *
 from train_valid_epoch import *
 from utils import Logger
 from opts import parse_opts
@@ -73,27 +72,34 @@ if __name__ == '__main__':
         train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                    batch_size=opt.batch_size,
                                                    num_workers=4,
+                                                   drop_last=True,
                                                    shuffle=True)
     
         valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset,
                                                    batch_size=opt.batch_size,
                                                    num_workers=4,
+                                                   drop_last=True,
                                                    shuffle=False)
 
         if opt.model_name == 'clstm':
             # convolutional lstm
-            from convolution_lstm_mod import *
+            from models.convolution_lstm_mod import *
             convlstm = CLSTM_EP(input_channels=1, hidden_channels=opt.hidden_channels,
                                 kernel_size=opt.kernel_size).cuda()
         elif opt.model_name == 'clstm_skip':
             # convolutional lstm with skip connection
-            from convolution_lstm_mod import *
+            from models.convolution_lstm_mod import *
             convlstm = CLSTM_EP3(input_channels=1, hidden_channels=opt.hidden_channels,
                                 kernel_size=opt.kernel_size).cuda()
         elif opt.model_name == 'clstm_multi':
             # convolutional lstm with multiple layers
-            from convolution_lstm_multi import *
+            from models.convolution_lstm_multi import *
             convlstm = CLSTM_EP_MUL(input_channels=1, hidden_channels=opt.hidden_channels,
+                                kernel_size=opt.kernel_size).cuda()
+        elif opt.model_name == 'clstm_2lyr':
+            # convolutional lstm with 2 layers
+            from models.convolution_lstm_2lyr import *
+            convlstm = CLSTM_2lyr(input_channels=1, hidden_channels=opt.hidden_channels,
                                 kernel_size=opt.kernel_size).cuda()
     
         if opt.transfer_path != 'None':

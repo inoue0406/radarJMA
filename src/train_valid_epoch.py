@@ -1,11 +1,11 @@
 import torch
+from torch.autograd import Variable
 import torchvision
 import numpy as np
 import torch.utils.data as data
 import torchvision.transforms as transforms
 
 from jma_pytorch_dataset import *
-from convolution_lstm_mod import *
 from utils import AverageMeter, Logger
 from criteria_precip import *
 # for debug
