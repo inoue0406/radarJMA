@@ -5,7 +5,7 @@
 case="result_20191103_clstm_size128"
 
 # running script for Rainfall Prediction with ConvLSTM
-python ../src/main_CLSTM_EP_jma.py --data_path ../data/data_kanto/ \
+python ../src/main_CLSTM_EP_jma.py --data_path ../data/data_kanto_resize/ \
        --train_path ../data/train_simple_JMARadar.csv \
        --valid_path ../data/valid_simple_JMARadar.csv \
        --test --eval_threshold 0.5 10 20 --test_path ../data/valid_simple_JMARadar.csv \

@@ -136,7 +136,7 @@ if __name__ == '__main__':
             ['epoch', 'loss'])
     
         # training 
-        for epoch in range(opt.n_epochs):
+        for epoch in range(1,opt.n_epochs+1):
             # step scheduler
             scheduler.step()
             # training & validation
@@ -145,6 +145,15 @@ if __name__ == '__main__':
             valid_epoch(epoch,opt.n_epochs,valid_loader,convlstm,loss_fn,
                         valid_logger,opt,scl)
 
+            if epoch % opt.checkpoint == 0:
+                # save the trained model for every checkpoint
+                # (1) as binary 
+                torch.save(convlstm,os.path.join(opt.result_path,
+                                                 'trained_CLSTM_epoch%03d.model' % epoch))
+                # (2) as state dictionary
+                torch.save(convlstm.state_dict(),
+                           os.path.join(opt.result_path,
+                                        'trained_CLSTM_epoch%03d.dict' % epoch))
         # save the trained model
         # (1) as binary 
         torch.save(convlstm,os.path.join(opt.result_path, 'trained_CLSTM.model'))

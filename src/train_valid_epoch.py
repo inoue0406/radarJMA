@@ -19,7 +19,7 @@ from tools_mem import *
 
 def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logger,train_batch_logger,opt,scl):
     
-    print('train at epoch {}'.format(epoch+1))
+    print('train at epoch {}'.format(epoch))
 
     losses = AverageMeter()
     
@@ -38,7 +38,7 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
 
         print('chk lr ',optimizer.param_groups[0]['lr'])
         train_batch_logger.log({
-            'epoch': epoch+1,
+            'epoch': epoch,
             'batch': i_batch+1,
             'loss': losses.val,
             'lr': optimizer.param_groups[0]['lr']
@@ -46,7 +46,7 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
 
         if (i_batch+1) % 1 == 0:
             print ('Train Epoch [%d/%d], Iter [%d/%d] Loss: %.4e' 
-                   %(epoch+1, num_epochs, i_batch+1, len(train_loader.dataset)//train_loader.batch_size, loss.item()))
+                   %(epoch, num_epochs, i_batch+1, len(train_loader.dataset)//train_loader.batch_size, loss.item()))
 
     # update lr for optimizer
     optimizer.step()
@@ -64,7 +64,7 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
 # --------------------------
 
 def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt,scl):
-    print('validation at epoch {}'.format(epoch+1))
+    print('validation at epoch {}'.format(epoch))
     
     losses = AverageMeter()
         
@@ -84,7 +84,7 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt,scl
 
         if (i_batch+1) % 1 == 0:
             print ('Valid Epoch [%d/%d], Iter [%d/%d] Loss: %.4e' 
-                   %(epoch+1, num_epochs, i_batch+1, len(valid_loader.dataset)//valid_loader.batch_size, loss.item()))
+                   %(epoch, num_epochs, i_batch+1, len(valid_loader.dataset)//valid_loader.batch_size, loss.item()))
             
     valid_logger.log({
         'epoch': epoch,
