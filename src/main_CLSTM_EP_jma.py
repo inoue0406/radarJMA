@@ -100,7 +100,12 @@ if __name__ == '__main__':
             # convolutional lstm with 2 layers
             from models.convolution_lstm_2lyr import *
             convlstm = CLSTM_2lyr(input_channels=1, hidden_channels=opt.hidden_channels,
-                                kernel_size=opt.kernel_size).cuda()
+                                  kernel_size=opt.kernel_size,batch_size=opt.batch_size).cuda()
+        elif opt.model_name == 'clstm_upper':
+            # convolutional lstm upper layer only
+            from models.convolution_lstm_2lyr import *
+            convlstm = CLSTM_upper(input_channels=1, hidden_channels=opt.hidden_channels,
+                                  kernel_size=opt.kernel_size,batch_size=opt.batch_size).cuda()
     
         if opt.transfer_path != 'None':
             # Use pretrained weights for transfer learning
@@ -148,8 +153,8 @@ if __name__ == '__main__':
             # training & validation
             train_epoch(epoch,opt.n_epochs,train_loader,convlstm,loss_fn,optimizer,
                         train_logger,train_batch_logger,opt,scl)
-            valid_epoch(epoch,opt.n_epochs,valid_loader,convlstm,loss_fn,
-                        valid_logger,opt,scl)
+            #valid_epoch(epoch,opt.n_epochs,valid_loader,convlstm,loss_fn,
+            #            valid_logger,opt,scl)
 
             if epoch % opt.checkpoint == 0:
                 # save the trained model for every checkpoint
@@ -183,7 +188,11 @@ if __name__ == '__main__':
                                         transform=None)
         test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
                                                    batch_size=opt.batch_size,
+                                                   num_workers=4,
+                                                   drop_last=True,
                                                    shuffle=False)
+
+        
         
         # testing for the trained model
         for threshold in opt.eval_threshold:

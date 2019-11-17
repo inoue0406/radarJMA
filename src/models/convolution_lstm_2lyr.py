@@ -20,13 +20,13 @@ def init_weights(m):
 
 class CLSTM_2lyr(nn.Module):
     # Two-layers model
-    def __init__(self, input_channels, hidden_channels, kernel_size):
+    def __init__(self, input_channels, hidden_channels, kernel_size, batch_size):
         super(CLSTM_2lyr, self).__init__()
         # temp
         predictor_rnn_layers = 2
         hidden_dim = 128
         rnn_size = 256
-        batch_size = 20
+        #batch_size = 20
         # Initialize encoder and decoder
         self.encoder = ed_model.encoder(hidden_dim, input_channels)#.cuda()
         self.decoder = ed_model.decoder(hidden_dim, input_channels)#.cuda()
@@ -67,6 +67,53 @@ class CLSTM_2lyr(nn.Module):
             h_pred = self.frame_predictor(h)
             x_pred = self.decoder([h_pred, skip])
             xout[:,it,:,:,:] = xout[:,it,:,:,:] + x_pred
+            #import pdb;pdb.set_trace()
+        return xout
+    
+class CLSTM_upper(nn.Module):
+    # Upper Layer Only
+    def __init__(self, input_channels, hidden_channels, kernel_size, batch_size):
+        super(CLSTM_upper, self).__init__()
+        # temp
+        predictor_rnn_layers = 2
+        hidden_dim = 128
+        rnn_size = 256
+        #batch_size = 20
+        # Initialize encoder and decoder
+        self.encoder = ed_model.encoder(hidden_dim, input_channels)#.cuda()
+        self.decoder = ed_model.decoder(hidden_dim, input_channels)#.cuda()
+        self.encoder.apply(init_weights)
+        self.decoder.apply(init_weights)
+        # Initialize frame predictor
+        self.frame_predictor = lstm_models.lstm(hidden_dim, hidden_dim, rnn_size,
+                                           predictor_rnn_layers, batch_size)#.cuda()
+        self.frame_predictor.apply(init_weights)
+        
+    def forward(self, input):
+        x = input
+        bsize, tsize, channels, height, width = x.size()
+        self.frame_predictor.zero_grad()
+        self.encoder.zero_grad()
+        self.decoder.zero_grad()
+        # initialize the hidden state.
+        self.frame_predictor.hidden = self.frame_predictor.init_hidden()
+
+        xout = Variable(torch.zeros(bsize, tsize, channels, height, width)).cuda()
+
+        # time step for past frames
+        for it in range(0, tsize):
+            x_in = x[:,it-1,:,:,:] # use ground truth frame for the first half
+            h, skip = self.encoder(x_in)
+            h_pred = self.frame_predictor(h)
+            x_pred = self.decoder([h_pred, skip])
+        # time step for future frames
+        for it in range(0, tsize):
+            x_in = x_pred # use predicted frame for the second half (NOT use ground truth)
+            _, skip = self.encoder(x_in)
+            h = h_pred
+            h_pred = self.frame_predictor(h)
+            x_pred = self.decoder([h_pred, skip])
+            xout[:,it,:,:,:] = x_pred
             #import pdb;pdb.set_trace()
         return xout
     
