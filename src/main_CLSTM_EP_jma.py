@@ -104,7 +104,9 @@ if __name__ == '__main__':
         elif opt.model_name == 'clstm_upper':
             # convolutional lstm upper layer only
             from models.convolution_lstm_2lyr import *
-            convlstm = CLSTM_upper(input_channels=1, hidden_channels=opt.hidden_channels,
+#            convlstm = CLSTM_upper(input_channels=1, hidden_channels=opt.hidden_channels,
+#                                   kernel_size=opt.kernel_size,batch_size=opt.batch_size).cuda()
+            convlstm = CLSTM_upper2(input_channels=1, hidden_channels=opt.hidden_channels,
                                   kernel_size=opt.kernel_size,batch_size=opt.batch_size).cuda()
     
         if opt.transfer_path != 'None':

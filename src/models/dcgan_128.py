@@ -26,9 +26,10 @@ class dcgan_upconv(nn.Module):
         return self.main(input)
 
 class encoder(nn.Module):
-    def __init__(self, dim, nc=1):
+    def __init__(self, dim, nc=1, skip_flg=True):
         super(encoder, self).__init__()
         self.dim = dim
+        self.skip_flg = skip_flg
         nf = 64
         # input is (nc) x 128 x 128
         self.c1 = dcgan_conv(nc, nf)
@@ -54,13 +55,19 @@ class encoder(nn.Module):
         h4 = self.c4(h3)
         h5 = self.c5(h4)
         h6 = self.c6(h5)
-        return h6.view(-1, self.dim), [h1, h2, h3, h4, h5]
+        if(self.skip_flg):
+            # with skip connection
+            return h6.view(-1, self.dim), [h1, h2, h3, h4, h5]
+        else:
+            # no skip connection
+            return h6.view(-1, self.dim)
 
 
 class decoder(nn.Module):
-    def __init__(self, dim, nc=1):
+    def __init__(self, dim, nc=1, skip_flg=True):
         super(decoder, self).__init__()
         self.dim = dim
+        self.skip_flg = skip_flg
         nf = 64
         self.upc1 = nn.Sequential(
                 # input is Z, going into a convolution
@@ -68,28 +75,57 @@ class decoder(nn.Module):
                 nn.BatchNorm2d(nf * 8),
                 nn.LeakyReLU(0.2, inplace=True)
                 )
-        # state size. (nf*8) x 4 x 4
-        self.upc2 = dcgan_upconv(nf * 8 * 2, nf * 8)
-        # state size. (nf*8) x 8 x 8
-        self.upc3 = dcgan_upconv(nf * 8 * 2, nf * 4)
-        # state size. (nf*4) x 16 x 16
-        self.upc4 = dcgan_upconv(nf * 4 * 2, nf * 2)
-        # state size. (nf*2) x 32 x 32
-        self.upc5 = dcgan_upconv(nf * 2 * 2, nf)
-        # state size. (nf) x 64 x 64
-        self.upc6 = nn.Sequential(
+        if(self.skip_flg):
+            # with skip connection
+            # state size. (nf*8) x 4 x 4
+            self.upc2 = dcgan_upconv(nf * 8 * 2, nf * 8)
+            # state size. (nf*8) x 8 x 8
+            self.upc3 = dcgan_upconv(nf * 8 * 2, nf * 4)
+            # state size. (nf*4) x 16 x 16
+            self.upc4 = dcgan_upconv(nf * 4 * 2, nf * 2)
+            # state size. (nf*2) x 32 x 32
+            self.upc5 = dcgan_upconv(nf * 2 * 2, nf)
+            # state size. (nf) x 64 x 64
+            self.upc6 = nn.Sequential(
                 nn.ConvTranspose2d(nf * 2, nc, 4, 2, 1),
                 nn.Sigmoid()
                 # state size. (nc) x 128 x 128
                 )
+        else:
+            # without skip connection
+            # state size. (nf*8) x 4 x 4
+            self.upc2 = dcgan_upconv(nf * 8, nf * 8)
+            # state size. (nf*8) x 8 x 8
+            self.upc3 = dcgan_upconv(nf * 8, nf * 4)
+            # state size. (nf*4) x 16 x 16
+            self.upc4 = dcgan_upconv(nf * 4, nf * 2)
+            # state size. (nf*2) x 32 x 32
+            self.upc5 = dcgan_upconv(nf * 2, nf)
+            # state size. (nf) x 64 x 64
+            self.upc6 = nn.Sequential(
+                nn.ConvTranspose2d(nf, nc, 4, 2, 1),
+                nn.Sigmoid()
+                # state size. (nc) x 128 x 128
+                )            
 
     def forward(self, input):
-        vec, skip = input 
-        d1 = self.upc1(vec.view(-1, self.dim, 1, 1))
-        d2 = self.upc2(torch.cat([d1, skip[4]], 1))
-        d3 = self.upc3(torch.cat([d2, skip[3]], 1))
-        d4 = self.upc4(torch.cat([d3, skip[2]], 1))
-        d5 = self.upc5(torch.cat([d4, skip[1]], 1))
-        output = self.upc6(torch.cat([d5, skip[0]], 1))
+        if(self.skip_flg):
+            # with skip connection
+            vec, skip = input 
+            d1 = self.upc1(vec.view(-1, self.dim, 1, 1))
+            d2 = self.upc2(torch.cat([d1, skip[4]], 1))
+            d3 = self.upc3(torch.cat([d2, skip[3]], 1))
+            d4 = self.upc4(torch.cat([d3, skip[2]], 1))
+            d5 = self.upc5(torch.cat([d4, skip[1]], 1))
+            output = self.upc6(torch.cat([d5, skip[0]], 1))
+        else:
+            # no skip connection
+            vec = input 
+            d1 = self.upc1(vec.view(-1, self.dim, 1, 1))
+            d2 = self.upc2(d1)
+            d3 = self.upc3(d2)
+            d4 = self.upc4(d3)
+            d5 = self.upc5(d4)
+            output = self.upc6(d5)
         return output
 

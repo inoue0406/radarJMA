@@ -80,13 +80,13 @@ class CLSTM_upper(nn.Module):
         rnn_size = 256
         #batch_size = 20
         # Initialize encoder and decoder
-        self.encoder = ed_model.encoder(hidden_dim, input_channels)#.cuda()
-        self.decoder = ed_model.decoder(hidden_dim, input_channels)#.cuda()
+        self.encoder = ed_model.encoder(hidden_dim, input_channels)
+        self.decoder = ed_model.decoder(hidden_dim, input_channels)
         self.encoder.apply(init_weights)
         self.decoder.apply(init_weights)
         # Initialize frame predictor
         self.frame_predictor = lstm_models.lstm(hidden_dim, hidden_dim, rnn_size,
-                                           predictor_rnn_layers, batch_size)#.cuda()
+                                           predictor_rnn_layers, batch_size)
         self.frame_predictor.apply(init_weights)
         
     def forward(self, input):
@@ -113,6 +113,53 @@ class CLSTM_upper(nn.Module):
             h = h_pred
             h_pred = self.frame_predictor(h)
             x_pred = self.decoder([h_pred, skip])
+            xout[:,it,:,:,:] = x_pred
+            #import pdb;pdb.set_trace()
+        return xout
+    
+class CLSTM_upper2(nn.Module):
+    # Upper Layer Only
+    # No skip connection
+    def __init__(self, input_channels, hidden_channels, kernel_size, batch_size):
+        super(CLSTM_upper2, self).__init__()
+        # temp
+        predictor_rnn_layers = 2
+        hidden_dim = 128
+        rnn_size = 256
+        #batch_size = 20
+        # Initialize encoder and decoder
+        self.encoder = ed_model.encoder(hidden_dim, input_channels, skip_flg=False)
+        self.decoder = ed_model.decoder(hidden_dim, input_channels, skip_flg=False)
+        self.encoder.apply(init_weights)
+        self.decoder.apply(init_weights)
+        # Initialize frame predictor
+        self.frame_predictor = lstm_models.lstm(hidden_dim, hidden_dim, rnn_size,
+                                           predictor_rnn_layers, batch_size)#.cuda()
+        self.frame_predictor.apply(init_weights)
+        
+    def forward(self, input):
+        x = input
+        bsize, tsize, channels, height, width = x.size()
+        self.frame_predictor.zero_grad()
+        self.encoder.zero_grad()
+        self.decoder.zero_grad()
+        # initialize the hidden state.
+        self.frame_predictor.hidden = self.frame_predictor.init_hidden()
+
+        xout = Variable(torch.zeros(bsize, tsize, channels, height, width)).cuda()
+
+        # time step for past frames
+        for it in range(0, tsize):
+            x_in = x[:,it-1,:,:,:] # use ground truth frame for the first half
+            h = self.encoder(x_in)
+            h_pred = self.frame_predictor(h)
+            x_pred = self.decoder(h_pred)
+        # time step for future frames
+        for it in range(0, tsize):
+            x_in = x_pred # use predicted frame for the second half (NOT use ground truth)
+            h = h_pred
+            h_pred = self.frame_predictor(h)
+            x_pred = self.decoder(h_pred)
             xout[:,it,:,:,:] = x_pred
             #import pdb;pdb.set_trace()
         return xout
