@@ -38,11 +38,11 @@ if __name__ == '__main__':
         if ind == 20:
             nsample = df_tmp.shape[0]
         else:
-            nsample = min(df_tmp.shape[0],1000)
+            nsample = min(df_tmp.shape[0],100)
         print("Number of samples: take ",nsample," among ",df_tmp.shape[0]," values")
         df_sam = pd.concat([df_sam,df_tmp.sample(n=nsample,random_state=0)])
 
-    df_sam = df_sam.reset_index(drop=True)
+    # df_sam = df_sam.reset_index(drop=True)
     # save to file
     df_sam.to_csv("../data/ts_kanto_train_flatsampled_JMARadar.csv")
     
