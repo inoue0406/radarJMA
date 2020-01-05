@@ -158,7 +158,7 @@ def test_CLSTM_EP(test_loader,model,loss_fn,opt,scl,threshold):
                        'MaxMSE': MaxMSE,
                        'FSS_mean': FSS_mean})
     df.to_csv(os.path.join(opt.result_path,
-                           'test_evaluation_predtime_%.2f.csv' % threshold))
+                           'test_evaluation_predtime_%.2f.csv' % threshold), float_format='%.3f')
     # free gpu memory
     del input,target,output,loss
     
