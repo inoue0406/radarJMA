@@ -98,6 +98,12 @@ def parse_opts():
         nargs='*',
         help='Thresholds in [mm/h] for precipitation evaluation')
     parser.add_argument(
+        '--use_var',
+        default=["rmax_100"],
+        type=str,
+        nargs='*',
+        help='Variables to be used as explanaory variable')
+    parser.add_argument(
         '--n_threads',
         default=4,
         type=int,

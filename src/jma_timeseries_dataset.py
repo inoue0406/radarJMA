@@ -11,7 +11,7 @@ import os
 # Pytorch custom dataset for JMA timeseries data
 
 class JMATSDataset(data.Dataset):
-    def __init__(self,csv_data,csv_anno,root_dir,tdim_use=12,transform=None):
+    def __init__(self,csv_data,csv_anno,use_var,root_dir,tdim_use=12,transform=None):
         """
         Args:
             csv_data (string): Path to the csv file with time series data.
@@ -32,6 +32,7 @@ class JMATSDataset(data.Dataset):
         
         self.root_dir = root_dir
         self.tdim_use = tdim_use
+        self.use_var = use_var
         self.transform = transform
         
     def __len__(self):
@@ -44,14 +45,13 @@ class JMATSDataset(data.Dataset):
         df_past = self.df_data.iloc[(idx-self.tdim_use+1):(idx+1)]
         df_future = self.df_data.iloc[(idx+1):(idx+self.tdim_use+1)]
         
-        rain_X = df_past['rmax_100'].to_numpy()
-        rain_Y = df_future['rmax_100'].to_numpy()
+        rain_X = df_past[self.use_var].to_numpy()
+        # the resulting tensor has [use_var X tdim_use] dimension
+        rain_Y = df_future[['rmax_100']].to_numpy()
         
         sample = {'past': rain_X, 'future': rain_Y}
         
         if self.transform:
             sample = self.transform(sample)
             
-        import pdb;pdb.set_trace()
-
         return sample

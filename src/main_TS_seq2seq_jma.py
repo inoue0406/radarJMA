@@ -16,7 +16,7 @@ import pdb
 
 from jma_timeseries_dataset import *
 from scaler import *
-#from train_valid_epoch import *
+from train_valid_epoch_ts import *
 from utils import Logger
 from opts_ts import parse_opts
 
@@ -57,12 +57,14 @@ if __name__ == '__main__':
         # loading datasets
         train_dataset = JMATSDataset(csv_data=opt.train_data_path,
                                      csv_anno=opt.train_anno_path,
+                                     use_var=opt.use_var,
                                      root_dir=None,
                                      tdim_use=opt.tdim_use,
                                      transform=None)
     
         valid_dataset = JMATSDataset(csv_data=opt.valid_data_path,
                                      csv_anno=opt.valid_anno_path,
+                                     use_var=opt.use_var,
                                      root_dir=None,
                                      tdim_use=opt.tdim_use,
                                      transform=None)
@@ -79,87 +81,88 @@ if __name__ == '__main__':
                                                    drop_last=True,
                                                    shuffle=False)
 
-#        tstdata = next(iter(train_loader))
-        tstdata = next(iter(train_dataset))
+#        tstdata = next(iter(train_dataset))
 
-#        if opt.model_name == 'seq2seq':
-#            # convolutional lstm
-#            from models.convolution_lstm_mod import *
-#            convlstm = CLSTM_EP(input_channels=1, hidden_channels=opt.hidden_channels,
-#                                kernel_size=opt.kernel_size).cuda()
-#    
-#        if opt.transfer_path != 'None':
-#            # Use pretrained weights for transfer learning
-#            print('loading pretrained model:',opt.transfer_path)
-#            convlstm = torch.load(opt.transfer_path)
-#
-#        modelinfo.write('Model Structure \n')
-#        modelinfo.write(str(convlstm))
-#        count_parameters(convlstm,modelinfo)
-#        modelinfo.close()
-#        
-#        if opt.loss_function == 'MSE':
-#            loss_fn = torch.nn.MSELoss()
-#        elif opt.loss_function == 'WeightedMSE':
-#            loss_fn = weighted_MSE_loss
-#        elif opt.loss_function == 'MaxMSE':
-#            loss_fn = max_MSE_loss(opt.loss_weights)
-#        elif opt.loss_function == 'MultiMSE':
-#            loss_fn = multi_MSE_loss(opt.loss_weights)
-#
-#        # Type of optimizers adam/rmsprop
-#        if opt.optimizer == 'adam':
-#            optimizer = torch.optim.Adam(convlstm.parameters(), lr=opt.learning_rate)
-#        elif opt.optimizer == 'rmsprop':
-#            optimizer = torch.optim.RMSprop(convlstm.parameters(), lr=opt.learning_rate)
-#            
-#        # learning rate scheduler
-#        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=opt.lr_decay)
-#            
-#        # Prep logger
-#        train_logger = Logger(
-#            os.path.join(opt.result_path, 'train.log'),
-#            ['epoch', 'loss', 'lr'])
-#        train_batch_logger = Logger(
-#            os.path.join(opt.result_path, 'train_batch.log'),
-#            ['epoch', 'batch', 'loss', 'lr'])
-#        valid_logger = Logger(
-#            os.path.join(opt.result_path, 'valid.log'),
-#            ['epoch', 'loss'])
-#    
-#        # training 
-#        for epoch in range(1,opt.n_epochs+1):
-#            # step scheduler
-#            scheduler.step()
-#            # training & validation
-#            train_epoch(epoch,opt.n_epochs,train_loader,convlstm,loss_fn,optimizer,
-#                        train_logger,train_batch_logger,opt,scl)
-#            #valid_epoch(epoch,opt.n_epochs,valid_loader,convlstm,loss_fn,
-#            #            valid_logger,opt,scl)
-#
-#            if epoch % opt.checkpoint == 0:
-#                # save the trained model for every checkpoint
-#                # (1) as binary 
-#                torch.save(convlstm,os.path.join(opt.result_path,
-#                                                 'trained_CLSTM_epoch%03d.model' % epoch))
-#                # (2) as state dictionary
-#                torch.save(convlstm.state_dict(),
-#                           os.path.join(opt.result_path,
-#                                        'trained_CLSTM_epoch%03d.dict' % epoch))
-#        # save the trained model
-#        # (1) as binary 
-#        torch.save(convlstm,os.path.join(opt.result_path, 'trained_CLSTM.model'))
-#        # (2) as state dictionary
-#        torch.save(convlstm.state_dict(),
-#                   os.path.join(opt.result_path, 'trained_CLSTM.dict'))
+        if opt.model_name == 'seq2seq':
+            # lstm seq2seq model
+            INPUT_DIM = len(opt.use_var)
+            OUTPUT_DIM = 1
+            HID_DIM = 512
+            N_LAYERS = 3
+            ENC_DROPOUT = 0.5
+            DEC_DROPOUT = 0.5
+
+            from models.seq2seq_lstm_ts import *
+            enc = Encoder(INPUT_DIM, HID_DIM, N_LAYERS, ENC_DROPOUT)
+            dec = Decoder(OUTPUT_DIM, HID_DIM, N_LAYERS, DEC_DROPOUT)
+            model = Seq2Seq(enc, dec, device='cuda').cuda()
+    
+        if opt.transfer_path != 'None':
+            # Use pretrained weights for transfer learning
+            print('loading pretrained model:',opt.transfer_path)
+            model = torch.load(opt.transfer_path)
+
+        modelinfo.write('Model Structure \n')
+        modelinfo.write(str(model))
+        count_parameters(model,modelinfo)
+        modelinfo.close()
+        
+        if opt.loss_function == 'MSE':
+            loss_fn = torch.nn.MSELoss()
+
+        # Type of optimizers adam/rmsprop
+        if opt.optimizer == 'adam':
+            optimizer = torch.optim.Adam(model.parameters(), lr=opt.learning_rate)
+        elif opt.optimizer == 'rmsprop':
+            optimizer = torch.optim.RMSprop(model.parameters(), lr=opt.learning_rate)
+
+        # learning rate scheduler
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=opt.lr_decay)
+            
+        # Prep logger
+        train_logger = Logger(
+            os.path.join(opt.result_path, 'train.log'),
+            ['epoch', 'loss', 'lr'])
+        train_batch_logger = Logger(
+            os.path.join(opt.result_path, 'train_batch.log'),
+            ['epoch', 'batch', 'loss', 'lr'])
+        valid_logger = Logger(
+            os.path.join(opt.result_path, 'valid.log'),
+            ['epoch', 'loss'])
+    
+        # training 
+        for epoch in range(1,opt.n_epochs+1):
+            # step scheduler
+            scheduler.step()
+            # training & validation
+            train_epoch(epoch,opt.n_epochs,train_loader,model,loss_fn,optimizer,
+                        train_logger,train_batch_logger,opt,scl)
+            #valid_epoch(epoch,opt.n_epochs,valid_loader,model,loss_fn,
+            #            valid_logger,opt,scl)
+
+            if epoch % opt.checkpoint == 0:
+                # save the trained model for every checkpoint
+                # (1) as binary 
+                torch.save(model,os.path.join(opt.result_path,
+                                                 'trained_seq2seq_epoch%03d.model' % epoch))
+                # (2) as state dictionary
+                torch.save(model.state_dict(),
+                           os.path.join(opt.result_path,
+                                        'trained_seq2seq_epoch%03d.dict' % epoch))
+        # save the trained model
+        # (1) as binary 
+        torch.save(model,os.path.join(opt.result_path, 'trained_seq2seq.model'))
+        # (2) as state dictionary
+        torch.save(model.state_dict(),
+                   os.path.join(opt.result_path, 'trained_seq2seq.dict'))
 #
 #    # test datasets if specified
 #    if opt.test:
 #        if opt.no_train:
 #            #load pretrained model from results directory
-#            model_fname = os.path.join(opt.result_path, 'trained_CLSTM.model')
+#            model_fname = os.path.join(opt.result_path, 'trained_seq2seq.model')
 #            print('loading pretrained model:',model_fname)
-#            convlstm = torch.load(model_fname)
+#            model = torch.load(model_fname)
 #            loss_fn = torch.nn.MSELoss()
 #            
 #        # prepare loader
@@ -177,7 +180,7 @@ if __name__ == '__main__':
 #        
 #        # testing for the trained model
 #        for threshold in opt.eval_threshold:
-#            test_CLSTM_EP(test_loader,convlstm,loss_fn,opt,scl,threshold)
+#            test_CLSTM_EP(test_loader,model,loss_fn,opt,scl,threshold)
 #
 #    # output elapsed time
 #    logfile.write('End time: '+time.ctime()+'\n')
