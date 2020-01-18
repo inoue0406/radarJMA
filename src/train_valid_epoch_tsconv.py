@@ -28,10 +28,11 @@ def train_epoch(epoch,num_epochs,train_loader,model,loss_fn,optimizer,train_logg
     for i_batch, sample_batched in enumerate(train_loader):
         #print(i_batch, sample_batched['past'].size(),sample_batched['future'].size())
         input = Variable(scl.fwd(sample_batched['features'].float())).cuda()
+        past = Variable(scl.fwd(sample_batched['past'].float())).cuda()
         target = Variable(scl.fwd(sample_batched['future'].float())).cuda()
         # Forward + Backward + Optimize
         optimizer.zero_grad()
-        output = model(input, target)
+        output = model(input, past, target)
         loss = loss_fn(output, target)
         loss.backward()
         optimizer.step()
@@ -75,10 +76,11 @@ def valid_epoch(epoch,num_epochs,valid_loader,model,loss_fn,valid_logger,opt,scl
 
     for i_batch, sample_batched in enumerate(valid_loader):
         input = Variable(scl.fwd(sample_batched['features'].float())).cuda()
+        past = Variable(scl.fwd(sample_batched['past'].float())).cuda()
         target = Variable(scl.fwd(sample_batched['future'].float())).cuda()
         # Forward
         # validation and testing process SHOULD NOT USE teacher forcing
-        output = model(input, target, teacher_forcing_ratio = 0.0)
+        output = model(input, past, target, teacher_forcing_ratio = 0.0)
         loss = loss_fn(output, target)
 
         # for logging
@@ -111,12 +113,12 @@ def test_epoch(test_loader,model,loss_fn,opt,scl):
     model.eval()
 
     for i_batch, sample_batched in enumerate(test_loader):
-        past = sample_batched['past'].float()
         input = Variable(scl.fwd(sample_batched['features'].float())).cuda()
+        past = Variable(scl.fwd(sample_batched['past'].float())).cuda()
         target = Variable(scl.fwd(sample_batched['future'].float())).cuda()
         # Forward
         # validation and testing process SHOULD NOT USE teacher forcing
-        output = model(input, target, teacher_forcing_ratio = 0.0)
+        output = model(input, past, target, teacher_forcing_ratio = 0.0)
         loss = loss_fn(output, target)
         # concat all prediction data
         Xtrue = scl.inv(target.data.cpu().numpy().squeeze())

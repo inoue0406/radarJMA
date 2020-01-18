@@ -7,6 +7,19 @@ import torchvision.transforms as transforms
 import pandas as pd
 import h5py
 import os
+import re
+
+def read_h5_and_prep(h5_name):
+    if os.path.isfile(h5_name):
+        h5file = h5py.File(h5_name,'r')
+        R = h5file['R'][()]
+        R = np.maximum(R,0) # replace negative value with 0
+        R = R[:,None,:,:] # add "channel" dimension as 1
+        h5file.close()
+    else:
+        print("h5 file NOT FOUND !!",h5_name)
+        R = np.zeros([12,1,200,200])
+    return R
 
 # Pytorch custom dataset for JMA timeseries data
 
@@ -22,11 +35,9 @@ class JMATSDataset(data.Dataset):
             transform (callable, optional): Optional transform to be applied on a sample.
         """
         # read time series data
-        #csv_data = "../data/data_kanto_ts/_max_log_2015.csv"
         self.df_data = pd.read_csv(csv_data)
         print("data length of original csv",len(self.df_data))
         
-        #csv_anno = "../data/ts_kanto_train_flatsampled_JMARadar.csv"
         self.df_anno = pd.read_csv(csv_anno)
         print("number of selected samples",len(self.df_anno))
         
@@ -53,6 +64,79 @@ class JMATSDataset(data.Dataset):
         rain_future = df_future[['rmax_100']].to_numpy()
         
         sample = {'features': rain_features,
+                  'past': rain_past,
+                  'future': rain_future}
+        
+        if self.transform:
+            sample = self.transform(sample)
+            
+        return sample
+
+class JMATSConvDataset(data.Dataset):
+    def __init__(self,csv_data,csv_anno,use_var,root_dir,tdim_use=12,transform=None):
+        """
+        Args:
+            csv_data (string): Path to the csv file with time series data.
+            csv_anno (string): Path to the csv file with annotations.
+            root_dir (string): Directory with all the radar data.
+            tdim_use: Size of temporal data to be used
+                       ex) tdim_use=3 means last 3 of X and first 3 of Y are used
+            transform (callable, optional): Optional transform to be applied on a sample.
+        """
+        # read time series data
+        self.df_data = pd.read_csv(csv_data)
+        print("data length of original csv",len(self.df_data))
+        
+        self.df_anno = pd.read_csv(csv_anno)
+        print("number of selected samples",len(self.df_anno))
+        
+        self.root_dir = root_dir
+        self.tdim_use = tdim_use
+        self.use_var = use_var
+        self.transform = transform
+        
+    def __len__(self):
+        return len(self.df_anno)
+        
+    def __getitem__(self, index):
+        
+        # get training sample based on time series data and annotation
+        idx = self.df_anno.iloc[index,0]
+        df_past = self.df_data.iloc[(idx-self.tdim_use+1):(idx+1)]
+        df_future = self.df_data.iloc[(idx+1):(idx+self.tdim_use+1)]
+
+        # extract necessary information
+        str1_fname = re.search('(2p-jmaradar5.+utc)',df_past['time'].values[0]).group(1)
+        str1_min = re.search('(..)utc',df_past['time'].values[0]).group(1)
+        str1_sub = re.sub('..utc','00utc',str1_fname)
+
+        str2_fname = re.search('(2p-jmaradar5.+utc)',df_past['time'].values[-1]).group(1)
+        str2_min = re.search('(..)utc',df_past['time'].values[0]).group(1)
+        str2_sub = re.sub('..utc','00utc',str2_fname)
+
+        root_dir = '../data/data_kanto'
+        if(str1_sub==str2_sub):
+            # when the series starts at 00min, we only need 1 file
+            h5_name = os.path.join(root_dir, str1_sub+'.h5')
+            R = read_h5_and_prep(h5_name)
+        else:
+            # else, we need 2 files
+            h5_name1 = os.path.join(root_dir, str1_sub+'.h5')
+            R1 = read_h5_and_prep(h5_name1)
+            h5_name2 = os.path.join(root_dir, str2_sub+'.h5')
+            R2 = read_h5_and_prep(h5_name2)
+            R = np.concatenate([R1,R2],axis=0)
+
+        # select necessary elements
+        id_start = int(int(str1_min)/5)
+        R = R[id_start:(id_start+self.tdim_use),:,:,:]
+
+        # past series
+        rain_past = df_past[['rmax_100']].to_numpy()
+        # future series
+        rain_future = df_future[['rmax_100']].to_numpy()
+        
+        sample = {'features': R,
                   'past': rain_past,
                   'future': rain_future}
         
