@@ -1,6 +1,6 @@
 #!/bin/bash
 
-case="result_202001006_tst_timeseries"
+case="result_20200106_tst_timeseries"
 
 # running script for Rainfall Prediction with time series prediction model
 python ../src/main_TS_seq2seq_jma.py --model_name seq2seq\
@@ -8,7 +8,7 @@ python ../src/main_TS_seq2seq_jma.py --model_name seq2seq\
        --train_anno_path ../data/ts_kanto_train_flatsampled_JMARadar.csv \
        --valid_data_path ../data/data_kanto_ts/_valid_data_2017.csv \
        --valid_anno_path ../data/ts_kanto_valid_flatsampled_JMARadar.csv \
-       --test --eval_threshold 0.5 10 20 \
+       --test --no_train --eval_threshold 0.5 10 20 \
        --use_var rmax_100 rmean_100\
        --test_data_path ../data/data_kanto_ts/_valid_data_2017.csv \
        --test_anno_path ../data/ts_kanto_valid_flatsampled_JMARadar.csv \

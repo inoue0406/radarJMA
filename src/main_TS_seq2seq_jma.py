@@ -137,8 +137,8 @@ if __name__ == '__main__':
             # training & validation
             train_epoch(epoch,opt.n_epochs,train_loader,model,loss_fn,optimizer,
                         train_logger,train_batch_logger,opt,scl)
-            #valid_epoch(epoch,opt.n_epochs,valid_loader,model,loss_fn,
-            #            valid_logger,opt,scl)
+            valid_epoch(epoch,opt.n_epochs,valid_loader,model,loss_fn,
+                        valid_logger,opt,scl)
 
             if epoch % opt.checkpoint == 0:
                 # save the trained model for every checkpoint
@@ -155,35 +155,34 @@ if __name__ == '__main__':
         # (2) as state dictionary
         torch.save(model.state_dict(),
                    os.path.join(opt.result_path, 'trained_seq2seq.dict'))
-#
-#    # test datasets if specified
-#    if opt.test:
-#        if opt.no_train:
-#            #load pretrained model from results directory
-#            model_fname = os.path.join(opt.result_path, 'trained_seq2seq.model')
-#            print('loading pretrained model:',model_fname)
-#            model = torch.load(model_fname)
-#            loss_fn = torch.nn.MSELoss()
-#            
-#        # prepare loader
-#        test_dataset = JMATSDataset(root_dir=opt.valid_data_path,
-#                                        csv_file=opt.test_path,
-#                                        tdim_use=opt.tdim_use,
-#                                        transform=None)
-#        test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
-#                                                   batch_size=opt.batch_size,
-#                                                   num_workers=4,
-#                                                   drop_last=True,
-#                                                   shuffle=False)
-#
-#        
-#        
-#        # testing for the trained model
-#        for threshold in opt.eval_threshold:
-#            test_CLSTM_EP(test_loader,model,loss_fn,opt,scl,threshold)
-#
-#    # output elapsed time
-#    logfile.write('End time: '+time.ctime()+'\n')
-#    tend = time.time()
-#    tdiff = float(tend-tstart)/3600.0
-#    logfile.write('Elapsed time[hours]: %f \n' % tdiff)
+
+    # test datasets if specified
+    if opt.test:
+        if opt.no_train:
+            #load pretrained model from results directory
+            model_fname = os.path.join(opt.result_path, 'trained_seq2seq.model')
+            print('loading pretrained model:',model_fname)
+            model = torch.load(model_fname)
+            loss_fn = torch.nn.MSELoss()
+            
+        # prepare loader
+        test_dataset = JMATSDataset(csv_data=opt.test_data_path,
+                                     csv_anno=opt.test_anno_path,
+                                     use_var=opt.use_var,
+                                     root_dir=None,
+                                     tdim_use=opt.tdim_use,
+                                     transform=None)
+        test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
+                                                   batch_size=opt.batch_size,
+                                                   num_workers=4,
+                                                   drop_last=True,
+                                                   shuffle=False)
+        
+        # testing for the trained model
+        test_epoch(test_loader,model,loss_fn,opt,scl)
+
+    # output elapsed time
+    logfile.write('End time: '+time.ctime()+'\n')
+    tend = time.time()
+    tdiff = float(tend-tstart)/3600.0
+    logfile.write('Elapsed time[hours]: %f \n' % tdiff)

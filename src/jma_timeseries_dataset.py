@@ -44,12 +44,17 @@ class JMATSDataset(data.Dataset):
         idx = self.df_anno.iloc[index,0]
         df_past = self.df_data.iloc[(idx-self.tdim_use+1):(idx+1)]
         df_future = self.df_data.iloc[(idx+1):(idx+self.tdim_use+1)]
+
+        # Features (independent variables) to be used as "X"
+        rain_features = df_past[self.use_var].to_numpy() # the resulting tensor has [use_var X tdim_use] dimension
+        # past series
+        rain_past = df_past[['rmax_100']].to_numpy()
+        # future series
+        rain_future = df_future[['rmax_100']].to_numpy()
         
-        rain_X = df_past[self.use_var].to_numpy()
-        # the resulting tensor has [use_var X tdim_use] dimension
-        rain_Y = df_future[['rmax_100']].to_numpy()
-        
-        sample = {'past': rain_X, 'future': rain_Y}
+        sample = {'features': rain_features,
+                  'past': rain_past,
+                  'future': rain_future}
         
         if self.transform:
             sample = self.transform(sample)
