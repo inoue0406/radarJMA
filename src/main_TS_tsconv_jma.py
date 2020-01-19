@@ -138,8 +138,8 @@ if __name__ == '__main__':
             # training & validation
             train_epoch(epoch,opt.n_epochs,train_loader,model,loss_fn,optimizer,
                         train_logger,train_batch_logger,opt,scl)
-            valid_epoch(epoch,opt.n_epochs,valid_loader,model,loss_fn,
-                        valid_logger,opt,scl)
+#            valid_epoch(epoch,opt.n_epochs,valid_loader,model,loss_fn,
+#                        valid_logger,opt,scl)
 
             if epoch % opt.checkpoint == 0:
                 # save the trained model for every checkpoint
@@ -174,7 +174,8 @@ if __name__ == '__main__':
                                      tdim_use=opt.tdim_use,
                                      transform=None)
         test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
-                                                   batch_size=opt.batch_size,
+#                                                   batch_size=opt.batch_size,
+                                                   batch_size=3, # small batch size used
                                                    num_workers=4,
                                                    drop_last=True,
                                                    shuffle=False)

@@ -121,10 +121,11 @@ def test_epoch(test_loader,model,loss_fn,opt,scl):
         output = model(input, past, target, teacher_forcing_ratio = 0.0)
         loss = loss_fn(output, target)
         # concat all prediction data
+        Xpast = scl.inv(past.data.cpu().numpy().squeeze())
         Xtrue = scl.inv(target.data.cpu().numpy().squeeze())
         Xmodel = scl.inv(output.data.cpu().numpy().squeeze())
         #
-        Xpast_all = np.append(Xpast_all,past.squeeze(),axis=0)
+        Xpast_all = np.append(Xpast_all,Xpast,axis=0)
         Xtrue_all = np.append(Xtrue_all,Xtrue,axis=0)
         Xmodel_all = np.append(Xmodel_all,Xmodel,axis=0)
         
