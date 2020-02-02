@@ -26,6 +26,7 @@ def count_parameters(model,f):
     Nparam = sum(p.numel() for p in model.parameters())
     Ntrain = sum(p.numel() for p in model.parameters() if p.requires_grad)
     f.write("Number of params:"+str(Nparam)+", Trainable parameters:"+str(Ntrain)+"\n")
+    print("Number of params:"+str(Nparam)+", Trainable parameters:"+str(Ntrain)+"\n")
     
 if __name__ == '__main__':
    
@@ -73,13 +74,13 @@ if __name__ == '__main__':
     
         train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                                    batch_size=opt.batch_size,
-                                                   num_workers=4,
+                                                   num_workers=7,
                                                    drop_last=True,
                                                    shuffle=True)
     
         valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset,
                                                    batch_size=opt.batch_size,
-                                                   num_workers=4,
+                                                   num_workers=7,
                                                    drop_last=True,
                                                    shuffle=False)
 
@@ -106,7 +107,7 @@ if __name__ == '__main__':
         modelinfo.write('Model Structure \n')
         modelinfo.write(str(model))
         count_parameters(model,modelinfo)
-        modelinfo.close()
+#        modelinfo.close()
         
         if opt.loss_function == 'MSE':
             loss_fn = torch.nn.MSELoss()
@@ -133,13 +134,28 @@ if __name__ == '__main__':
     
         # training 
         for epoch in range(1,opt.n_epochs+1):
+            
+            if epoch < 10:
+                # freeze conv_encoder for first 10 epochs
+                submodel = next(iter(model.children()))
+                for param in submodel.parameters():
+                    param.requires_grad = False
+            else:
+                # unfreeze conv_encoder for the rest
+                submodel = next(iter(model.children()))
+                for param in submodel.parameters():
+                    param.requires_grad = True
+            count_parameters(model,modelinfo)
+            #import pdb;pdb.set_trace()
+            
             # step scheduler
+                    
             scheduler.step()
             # training & validation
             train_epoch(epoch,opt.n_epochs,train_loader,model,loss_fn,optimizer,
                         train_logger,train_batch_logger,opt,scl)
-#            valid_epoch(epoch,opt.n_epochs,valid_loader,model,loss_fn,
-#                        valid_logger,opt,scl)
+            valid_epoch(epoch,opt.n_epochs,valid_loader,model,loss_fn,
+                        valid_logger,opt,scl)
 
             if epoch % opt.checkpoint == 0:
                 # save the trained model for every checkpoint
@@ -176,7 +192,7 @@ if __name__ == '__main__':
         test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
 #                                                   batch_size=opt.batch_size,
                                                    batch_size=3, # small batch size used
-                                                   num_workers=4,
+                                                   num_workers=7,
                                                    drop_last=True,
                                                    shuffle=False)
         
