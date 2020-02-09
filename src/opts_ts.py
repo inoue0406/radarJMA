@@ -109,6 +109,11 @@ def parse_opts():
         nargs='*',
         help='Variables to be used as explanaory variable')
     parser.add_argument(
+        '--data_resize',
+        default=200,
+        type=int,
+        help='resize pixels for training data')
+    parser.add_argument(
         '--n_threads',
         default=4,
         type=int,

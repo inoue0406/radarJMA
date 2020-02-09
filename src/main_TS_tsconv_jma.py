@@ -61,6 +61,7 @@ if __name__ == '__main__':
                                      use_var=opt.use_var,
                                      root_dir=None,
                                      tdim_use=opt.tdim_use,
+                                     resize=opt.data_resize,
                                      transform=None)
     
         valid_dataset = JMATSConvDataset(csv_data=opt.valid_data_path,
@@ -68,6 +69,7 @@ if __name__ == '__main__':
                                      use_var=opt.use_var,
                                      root_dir=None,
                                      tdim_use=opt.tdim_use,
+                                     resize=opt.data_resize,
                                      transform=None)
         
         #tstdata = next(iter(train_dataset))

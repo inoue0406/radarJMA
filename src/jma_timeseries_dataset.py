@@ -3,6 +3,7 @@ import torchvision
 import numpy as np
 import torch.utils.data as data
 import torchvision.transforms as transforms
+import torch.nn.functional as F
 
 import pandas as pd
 import h5py
@@ -20,6 +21,13 @@ def read_h5_and_prep(h5_name):
         print("h5 file NOT FOUND !!",h5_name)
         R = np.zeros([12,1,200,200])
     return R
+
+def check_consistency(max_series,R):
+    r1 = np.max(R[:,:,50:151,50:151],axis=(1,2,3))
+    r2 = max_series.flatten()
+    print("chk1 time sereies:",r1)
+    print("chk2 spatial:",r2)
+    return
 
 # Pytorch custom dataset for JMA timeseries data
 
@@ -73,7 +81,7 @@ class JMATSDataset(data.Dataset):
         return sample
 
 class JMATSConvDataset(data.Dataset):
-    def __init__(self,csv_data,csv_anno,use_var,root_dir,tdim_use=12,transform=None):
+    def __init__(self,csv_data,csv_anno,use_var,root_dir,tdim_use=12,resize=200,transform=None):
         """
         Args:
             csv_data (string): Path to the csv file with time series data.
@@ -90,6 +98,7 @@ class JMATSConvDataset(data.Dataset):
         self.df_anno = pd.read_csv(csv_anno)
         print("number of selected samples",len(self.df_anno))
         
+        self.resize = resize
         self.root_dir = root_dir
         self.tdim_use = tdim_use
         self.use_var = use_var
@@ -131,12 +140,20 @@ class JMATSConvDataset(data.Dataset):
         id_start = int(int(str1_min)/5)
         R = R[id_start:(id_start+self.tdim_use),:,:,:]
 
+        # resize image to suit convolutional structure
+        # in the case of vgg16 this should be 128
+        #                resnet this should be 224
+        Rint = F.interpolate(torch.from_numpy(R),size=self.resize)
+
         # past series
         rain_past = df_past[['rmax_100']].to_numpy()
         # future series
         rain_future = df_future[['rmax_100']].to_numpy()
+
+        # check 
+        # check_consistency(rain_past,R)
         
-        sample = {'features': R,
+        sample = {'features': Rint,
                   'past': rain_past,
                   'future': rain_future}
         
