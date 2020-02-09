@@ -177,7 +177,7 @@ if __name__ == '__main__':
     if opt.test:
         if opt.no_train:
             #load pretrained model from results directory
-            model_fname = os.path.join(opt.result_path, 'trained_seq2seq.model')
+            model_fname = os.path.join(opt.result_path, opt.test_model_fname)
             print('loading pretrained model:',model_fname)
             model = torch.load(model_fname)
             loss_fn = torch.nn.MSELoss()
