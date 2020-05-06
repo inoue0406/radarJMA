@@ -11,8 +11,6 @@ import sys
 import json
 import time
 
-import pdb
-
 from jma_pytorch_dataset import *
 from test_OFpred import *
 from utils import Logger
@@ -53,8 +51,9 @@ if __name__ == '__main__':
 
     # Test for Optical Flow Forecast
     loss_fn = torch.nn.MSELoss()
-    test_OFpred(test_loader,loss_fn,
-                test_logger,opt)
+    for threshold in opt.eval_threshold:
+        test_OFpred(test_loader,loss_fn,
+                    test_logger,opt,threshold)
 
     # output elapsed time
     logfile.write('End time: '+time.ctime()+'\n')

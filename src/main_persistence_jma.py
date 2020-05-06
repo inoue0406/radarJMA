@@ -11,11 +11,8 @@ import sys
 import json
 import time
 
-import pdb
-
 from jma_pytorch_dataset import *
 from scaler import *
-from convolution_lstm_mod import *
 from test_persistence import *
 from utils import Logger
 from opts import parse_opts
@@ -60,8 +57,10 @@ if __name__ == '__main__':
 
     # Test for Persistence Forecast
     loss_fn = torch.nn.MSELoss()
-    test_persistence(test_loader,loss_fn,
-                     test_logger,opt,scl)
+    # testing for the trained model
+    for threshold in opt.eval_threshold:
+        test_persistence(test_loader,loss_fn,
+                         test_logger,opt,scl,threshold)
 
     # output elapsed time
     logfile.write('End time: '+time.ctime()+'\n')

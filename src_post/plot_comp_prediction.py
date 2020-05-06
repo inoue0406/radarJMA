@@ -23,7 +23,7 @@ sys.path.append(path)
 
 from jma_pytorch_dataset import *
 from scaler import *
-from convolution_lstm_mod import *
+from models.convolution_lstm_mod import *
 from train_valid_epoch import *
 from colormap_JMA import Colormap_JMA
 
@@ -162,7 +162,7 @@ if __name__ == '__main__':
     #case = 'result_20190712_tr_clstm_flatsampled'
     #case = 'result_20190625_clstm_lrdecay07_ep20'
 
-    data_path = '../data/data_kanto/'
+    data_path = '../data/data_kanto_resize/'
     filelist = '../data/valid_simple_JMARadar.csv'
     model_fname = case + '/trained_CLSTM.model'
     pic_path = case + '/png/'

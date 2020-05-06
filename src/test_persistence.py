@@ -3,15 +3,15 @@ import torchvision
 import numpy as np
 import torch.utils.data as data
 import torchvision.transforms as transforms
+from torch.autograd import Variable
 
 from jma_pytorch_dataset import *
-from convolution_lstm_mod import *
 from utils import AverageMeter, Logger
 from criteria_precip import *
 
 # testing for "Persistence" forecast 
             
-def test_persistence(test_loader,loss_fn,test_logger,opt,scl):
+def test_persistence(test_loader,loss_fn,test_logger,opt,scl,threshold):
     print('Test for persistence forecast')
     
     losses = AverageMeter()
@@ -48,8 +48,8 @@ def test_persistence(test_loader,loss_fn,test_logger,opt,scl):
         # apply evaluation metric
         Xtrue = scl.inv(target.data.cpu().numpy())
         Xmodel = scl.inv(output.data.cpu().numpy())
-        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,th=opt.eval_threshold)
-        FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold,win=10)
+        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(Xtrue,Xmodel,th=threshold)
+        FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=threshold,win=10)
         # stat
         SumSE_all = np.append(SumSE_all,SumSE,axis=0)
         hit_all = np.append(hit_all,hit,axis=0)
@@ -95,6 +95,7 @@ def test_persistence(test_loader,loss_fn,test_logger,opt,scl):
                        'MaxMSE': MaxMSE,
                        'FSS_mean': FSS_mean,
                        })
-    df.to_csv(os.path.join(opt.result_path, 'test_evaluation_predtime.csv'))
+    df.to_csv(os.path.join(opt.result_path,
+                           'test_evaluation_predtime_%.2f.csv' % threshold), float_format='%.3f')
 
     

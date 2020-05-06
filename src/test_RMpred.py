@@ -6,7 +6,6 @@ import torchvision.transforms as transforms
 from torch.autograd import Variable
 
 from jma_pytorch_dataset import *
-from convolution_lstm_mod import *
 from utils import AverageMeter, Logger
 from criteria_precip import *
 
@@ -15,8 +14,7 @@ import sys
 # optical flow forecast with RainyMotion
 
 # add rainymotion source dir
-#path = os.path.join('../../rainymotion')
-path = os.path.join('../../rainymotion_nw')
+path = os.path.join('/home/tsuyoshi/rainymotion_nw')
 sys.path.append(path)
 from rainymotion.models import *
 from rainymotion.utils import *
@@ -46,7 +44,7 @@ def RM_predictor(data_past,tdim_use):
     nowcast_orig = inv_RYScaler(nowcast,c1,c2)
     return(nowcast_orig)
             
-def test_RMpred(test_loader,loss_fn,test_logger,opt):
+def test_RMpred(test_loader,loss_fn,test_logger,opt,threshold):
     print('Test for RainyMotion optical-flow forecast')
     
     losses = AverageMeter()
@@ -91,8 +89,8 @@ def test_RMpred(test_loader,loss_fn,test_logger,opt):
         Xmodel = output.data.cpu().numpy()
         SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(target.data.cpu().numpy(),
                                                             output.data.cpu().numpy(),
-                                                            th=opt.eval_threshold)
-        FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=opt.eval_threshold,win=10)
+                                                            th=threshold)
+        FSS_t = FSS_for_tensor(Xtrue,Xmodel,th=threshold,win=10)
         
         SumSE_all = np.append(SumSE_all,SumSE,axis=0)
         hit_all = np.append(hit_all,hit,axis=0)
@@ -141,7 +139,8 @@ def test_RMpred(test_loader,loss_fn,test_logger,opt):
                        'Cor':Cor,
                        'MaxMSE': MaxMSE,
                        'FSS_mean': FSS_mean})
-    df.to_csv(os.path.join(opt.result_path, 'test_evaluation_predtime.csv'))
+    df.to_csv(os.path.join(opt.result_path,
+                           'test_evaluation_predtime_%.2f.csv' % threshold), float_format='%.3f')
 
 
     
