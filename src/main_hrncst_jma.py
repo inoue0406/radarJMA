@@ -1,69 +1,112 @@
-import torch 
-import torchvision
 import numpy as np
-import torch.utils.data as data
-import torchvision.transforms as transforms
-
 import pandas as pd
 import h5py
 import os
 import sys
-import json
 import time
+import glob
 
-from jma_pytorch_dataset import *
-from scaler import *
 from test_persistence import *
-from utils import Logger
-from opts import parse_opts
+from criteria_precip import *
 
-# Forecat by
+# testing forecst accuracy by JMA hrncst
+
+def get_model_true_pairs(infile):
+    # prep prediction from '00utc' dataset
+    print("reading 00utc:",infile)
+    if not os.path.isfile(infile):
+        print("file NOT found")
+        return None,None
+    h5file = h5py.File(infile,'r')
+    rain_pred = h5file['R'][()]
+    rain_pred = np.maximum(rain_pred,0) # replace negative value with
+    rain_pred = rain_pred[1:,:,:] # remove initial
+    
+    # prep ground truth
+    rain_true = np.zeros(rain_pred.shape)
+    
+    for i in range(1,7):
+        # prep ground truth from dataset in each time step
+        shour = '{0:02d}utc'.format(i*5)
+        tmp_file = infile.replace('00utc',shour)
+        print("reading:",tmp_file)
+        if not os.path.isfile(infile):
+            print("file NOT found")
+            return None,None
+        h5file = h5py.File(tmp_file,'r')
+        rain_tmp = h5file['R'][()]
+        rain_tmp= np.maximum(rain_tmp,0) # replace negative value with 0
+        
+        rain_true[i-1,:,:] = rain_tmp[0,:,:] # use initial data as the ground truth
+    return rain_pred,rain_true
+
+
+def eval_on_threshold(file_list,threshold,tdim_use,result_path):
+    # evaluate metrics for single threshold
+    
+    # initialize
+    SumSE_all = np.empty((0,tdim_use),float)
+    hit_all = np.empty((0,tdim_use),float)
+    miss_all = np.empty((0,tdim_use),float)
+    falarm_all = np.empty((0,tdim_use),float)
+    m_xy_all = np.empty((0,tdim_use),float)
+    m_xx_all = np.empty((0,tdim_use),float)
+    m_yy_all = np.empty((0,tdim_use),float)
+    MaxSE_all = np.empty((0,tdim_use),float)
+    FSS_t_all = np.empty((0,tdim_use),float)
+
+    for infile in file_list:
+        rain_pred,rain_true = get_model_true_pairs(infile)
+        if rain_pred is None:
+            print("skipped:")
+            continue
+        # input must be in [sample x time x channels x height x width] dimension
+        rain_true = rain_true[None,:,None,:,:]
+        rain_pred = rain_pred[None,:,None,:,:]
+        SumSE,hit,miss,falarm,m_xy,m_xx,m_yy,MaxSE = StatRainfall(rain_true,rain_pred,th=threshold)
+        FSS_t = FSS_for_tensor(rain_true,rain_pred,th=threshold,win=10)
+        # stat
+        SumSE_all = np.append(SumSE_all,SumSE,axis=0)
+        hit_all = np.append(hit_all,hit,axis=0)
+        miss_all = np.append(miss_all,miss,axis=0)
+        falarm_all = np.append(falarm_all,falarm,axis=0)
+        m_xy_all = np.append(m_xy_all,m_xy,axis=0)
+        m_xx_all = np.append(m_xx_all,m_xx,axis=0)
+        m_yy_all = np.append(m_yy_all,m_yy,axis=0)
+        MaxSE_all = np.append(MaxSE_all,MaxSE,axis=0)
+        FSS_t_all = np.append(FSS_t_all,FSS_t,axis=0)
+        
+    RMSE,CSI,FAR,POD,Cor,MaxMSE,FSS_mean = MetricRainfall(SumSE_all,hit_all,miss_all,falarm_all,
+                                          m_xy_all,m_xx_all,m_yy_all,
+                                          MaxSE_all,FSS_t_all,axis=(0))
+    
+    # save evaluated metric as csv file
+    tpred = (np.arange(tdim_use)+1.0)*5.0 # in minutes
+    # import pdb; pdb.set_trace()
+    df = pd.DataFrame({'tpred_min':tpred,
+                       'RMSE':RMSE,
+                       'CSI':CSI,
+                       'FAR':FAR,
+                       'POD':POD,
+                       'Cor':Cor,
+                       'MaxMSE': MaxMSE,
+                       'FSS_mean': FSS_mean,
+                       })
+    df.to_csv(os.path.join(result_path,
+                           'test_evaluation_predtime_%.2f.csv' % threshold), float_format='%.3f')
+    return
 
 if __name__ == '__main__':
-   
-    # parse options
-    opt = parse_opts()
-    print(opt)
-    # create result dir
-    if not os.path.exists(opt.result_path):
-        os.mkdir(opt.result_path)
+
+    # search directory
+    infile_root = '../data/hrncst_kanto_rerun/'
+    file_list = sorted(glob.iglob(infile_root + '/*00utc.h5'))
     
-    with open(os.path.join(opt.result_path, 'opts.json'), 'w') as opt_file:
-        json.dump(vars(opt), opt_file)
+    thresholds = [0.5,10,20]
+    tdim_use = 6
+    result_path = "result_20200510_hrncst"
 
-    # generic log file
-    logfile = open(os.path.join(opt.result_path, 'log_run.txt'),'w')
-    logfile.write('Start time:'+time.ctime()+'\n')
-    tstart = time.time()
-    
-    # prepare scaler for data
-    if opt.data_scaling == 'linear':
-        scl = LinearScaler()
-    elif opt.data_scaling == 'log':
-        scl = LogScaler()
-        
-    # loading datasets (we only need testation data)
-    test_dataset = JMARadarDataset(root_dir=opt.data_path,
-                                    csv_file=opt.train_path,
-                                    tdim_use=opt.tdim_use,
-                                    transform=None)
-    test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
-                                               batch_size=opt.batch_size,
-                                               shuffle=False)
-    # Prep logger
-    test_logger = Logger(
-        os.path.join(opt.result_path, 'test.log'),
-        ['loss', 'RMSE', 'CSI', 'FAR', 'POD', 'Cor'])
-
-    # Test for Persistence Forecast
-    loss_fn = torch.nn.MSELoss()
-    # testing for the trained model
-    for threshold in opt.eval_threshold:
-        test_persistence(test_loader,loss_fn,
-                         test_logger,opt,scl,threshold)
-
-    # output elapsed time
-    logfile.write('End time: '+time.ctime()+'\n')
-    tend = time.time()
-    tdiff = float(tend-tstart)/3600.0
-    logfile.write('Elapsed time[hours]: %f \n' % tdiff)
+    for threshold in thresholds:
+        print("evaluation for the threshold ",threshold)
+        eval_on_threshold(file_list,threshold,tdim_use,result_path)
+                    

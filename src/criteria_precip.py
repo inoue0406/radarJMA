@@ -25,6 +25,7 @@ def FSS_for_tensor(Xtrue,Xmodel,th=0.5,win=2):
 
 # Various statistics for evaluation of rainfall
 def StatRainfall(Xtrue,Xmodel,th=0.5):
+    # input must be in [sample x time x channels x height x width] dimension
     # count only if rainfall is present
     rflag = Xtrue > th
     # ----------------------

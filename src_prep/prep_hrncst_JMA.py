@@ -89,8 +89,9 @@ def read_hrncst_smoothed(lons_kanto,lats_kanto,fname):
     r_out = np.zeros((tdim,len(lats_kanto),len(lons_kanto)))
     for i in range(tdim):
         # Apply gaussian filter (Smoothing)
-        sigma = [2, 2] # smooth 250m scale to 1km scale
+        sigma = [0.01, 0.01] # smooth 250m scale to 1km scale
         r_sm = scipy.ndimage.filters.gaussian_filter(r_rect[i,:,:], sigma, mode='constant')
+        #r_sm = r_rect[i,:,:]
         # Interpolate by nearest neighbour
         intfunc = RegularGridInterpolator((lats_rect, lons_rect), r_sm)
         la2, lo2 = np.meshgrid(lats_kanto, lons_kanto)
@@ -104,36 +105,56 @@ if __name__ == '__main__':
     
     lons_kanto, lats_kanto = grid_Kanto_jma_radar()
 
+    # read case name from command line
+    argvs = sys.argv
+    argc = len(argvs)
+
+    if argc != 2:
+        print('Usage: python plot_comp_prediction.py YYYY-DD')
+        quit()
+    year_day = argvs[1]
+
     # read
     infile_root = '../data/4p-hrncstprate/'
+    #infile_root = '../data/4p-hrncstprate_rerun/'
     print('input dir:',infile_root)
 
     # outfile
-    outfile_root = '../data/hrncst_kanto/'
-    print('output dir:',infile_root)
+    #outfile_root = '../data/hrncst_kanto/'
+    outfile_root = '../data/hrncst_kanto_rerun/'
+    print('output dir:',outfile_root)
 
     nx = 200
     ny = 200
     nt = 7
 
+    # process only 00min file
     file_list = sorted(glob.iglob(infile_root + '/*00utc.nc.gz'))
+    # process all the file
+    #file_list = sorted(glob.iglob(infile_root + '/*utc.nc.gz'))
+    file_list = sorted(glob.iglob(infile_root + '/4p-hrncstprate_japan0250_'+year_day+'*utc.nc.gz'))
+    
     # restart
-    file_list = file_list[4350:]
+    # file_list = file_list[4350:]
     for infile in file_list:
         # read 1hour data at a time
         # initialize with -999.0
         R1h = np.full((nt,nx,ny),-999.0,dtype=np.float32)
     
         in_zfile = infile
-        print('reading zipped file:',in_zfile)
+        in_zfile_cp = in_zfile.replace(infile_root,'../data/temp/')
+        subprocess.run('cp '+in_zfile+' '+in_zfile_cp,shell=True)
+        
+        print('reading zipped file:',in_zfile_cp)
         # '-k' option for avoiding removing gz file
-        subprocess.run('gunzip -kf '+in_zfile,shell=True)
-        in_nc=in_zfile.replace('.gz','')
+        subprocess.run('gunzip -kf '+in_zfile_cp,shell=True)
+        in_nc=in_zfile_cp.replace('.gz','')
         print('reading nc file:',in_nc)
         if os.path.exists(in_nc):
             R1h = read_hrncst_smoothed(lons_kanto,lats_kanto,in_nc)
         else:
             print('nc file not found!!!',in_nc)
+        subprocess.run('rm '+in_zfile_cp,shell=True)
         subprocess.run('rm '+in_nc,shell=True)
         # write to h5 file
         h5fname = infile.split('/')[-1]
