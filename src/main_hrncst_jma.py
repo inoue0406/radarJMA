@@ -98,13 +98,27 @@ def eval_on_threshold(file_list,threshold,tdim_use,result_path):
 
 if __name__ == '__main__':
 
+    # read case name from command line
+    argvs = sys.argv
+    argc = len(argvs)
+
+    if argc != 3:
+        print('Usage: python main_hcncst_jma.py data_dir result_dir')
+        quit()
+        
     # search directory
-    infile_root = '../data/hrncst_kanto_rerun/'
+    infile_root = argvs[1]
+    #infile_root = '../data/hrncst_kanto_rerun/'
     file_list = sorted(glob.iglob(infile_root + '/*00utc.h5'))
     
     thresholds = [0.5,10,20]
     tdim_use = 6
-    result_path = "result_20200510_hrncst"
+    result_path = argvs[2]
+    #result_path = "result_20200510_hrncst"
+
+    # create result dir
+    if not os.path.exists(result_path):
+        os.mkdir(result_path)
 
     for threshold in thresholds:
         print("evaluation for the threshold ",threshold)
