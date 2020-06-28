@@ -30,7 +30,7 @@ def get_model_true_pairs(infile):
         shour = '{0:02d}utc'.format(i*5)
         tmp_file = infile.replace('00utc',shour)
         print("reading:",tmp_file)
-        if not os.path.isfile(infile):
+        if not os.path.isfile(tmp_file):
             print("file NOT found")
             return None,None
         h5file = h5py.File(tmp_file,'r')
@@ -54,8 +54,9 @@ def eval_on_threshold(file_list,threshold,tdim_use,result_path):
     m_yy_all = np.empty((0,tdim_use),float)
     MaxSE_all = np.empty((0,tdim_use),float)
     FSS_t_all = np.empty((0,tdim_use),float)
+    flist_all = []
 
-    for infile in file_list:
+    for i,infile in enumerate(file_list):
         rain_pred,rain_true = get_model_true_pairs(infile)
         if rain_pred is None:
             print("skipped:")
@@ -75,7 +76,13 @@ def eval_on_threshold(file_list,threshold,tdim_use,result_path):
         m_yy_all = np.append(m_yy_all,m_yy,axis=0)
         MaxSE_all = np.append(MaxSE_all,MaxSE,axis=0)
         FSS_t_all = np.append(FSS_t_all,FSS_t,axis=0)
-        
+        #
+        flist_all.append(infile)
+        #if i > 10:
+        #    break
+
+    # ------------------------------------------------------------------
+    # time
     RMSE,CSI,FAR,POD,Cor,MaxMSE,FSS_mean = MetricRainfall(SumSE_all,hit_all,miss_all,falarm_all,
                                           m_xy_all,m_xx_all,m_yy_all,
                                           MaxSE_all,FSS_t_all,axis=(0))
@@ -94,6 +101,24 @@ def eval_on_threshold(file_list,threshold,tdim_use,result_path):
                        })
     df.to_csv(os.path.join(result_path,
                            'test_evaluation_predtime_%.2f.csv' % threshold), float_format='%.3f')
+    # ------------------------------------------------------------------
+    # samples
+    RMSE,CSI,FAR,POD,Cor,MaxMSE,FSS_mean = MetricRainfall(SumSE_all,hit_all,miss_all,falarm_all,
+                                          m_xy_all,m_xx_all,m_yy_all,
+                                          MaxSE_all,FSS_t_all,axis=(1))
+    
+    # save evaluated metric as csv file
+    df = pd.DataFrame({'file':flist_all,
+                       'RMSE':RMSE,
+                       'CSI':CSI,
+                       'FAR':FAR,
+                       'POD':POD,
+                       'Cor':Cor,
+                       'MaxMSE': MaxMSE,
+                       'FSS_mean': FSS_mean,
+                       })
+    df.to_csv(os.path.join(result_path,
+                           'test_evaluation_samples_%.2f.csv' % threshold), float_format='%.3f')
     return
 
 if __name__ == '__main__':
