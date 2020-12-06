@@ -111,7 +111,8 @@ def fname_1h_ago(fname):
 
 if __name__ == '__main__':
     #for year in [2015,2016,2017]:
-    year = 2016
+    #year = 2016
+    year = 2010
     df = pd.read_csv("../data/stat_jma/stat_alljapan_"+str(year)+".txt")
     Nerr = np.sum(df["max_rain"]<=-32768)
     print("Number of irregular values",Nerr)

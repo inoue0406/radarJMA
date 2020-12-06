@@ -73,6 +73,10 @@ def ext_nc_JMA(fname):
     j0=np.argmin(np.abs(lats.data-lat_tokyo)) - int(ny_clip/2)
     i1=i0+nx_clip
     j1=j0+ny_clip
+    # check
+    if((i0 != 1641) or(j0 != 1781)):
+        print("irregular i0,j0: skip.. ",i0,j0)
+        return None
     # choose ii and jj to span the whole dataset area
     Rslct = np.zeros(35)
     count = 0
@@ -97,7 +101,7 @@ def ext_nc_JMA(fname):
     return(Rslct)
 
 def stat_alljapan(year):
-    infile_root = '../data/jma_radar/%d/' % (year)
+    infile_root = '/data/nas_data/jma_radar/%d/' % (year)
     print('dir:',infile_root)
 
     nx = 200
@@ -107,7 +111,8 @@ def stat_alljapan(year):
     fwrite = open(('../data/stat_jma/stat_alljapan_%d.txt'% (year)),'w')
     fwrite.write("data,n,ii,jj,max_rain\n")
 
-    for infile in sorted(glob.iglob(infile_root + '/*/*/*00utc.nc.gz')):
+    #for infile in sorted(glob.iglob(infile_root + '/*/*/*00utc.nc.gz')):
+    for infile in sorted(glob.iglob(infile_root + '*00utc.nc.gz')):
         # read 1hour data at a time
         # initialize with -999.0
         R1h = np.full((nt,35),-999.0,dtype=np.float32)
@@ -121,6 +126,8 @@ def stat_alljapan(year):
             print('reading nc file:',in_nc)
             if os.path.exists(in_nc):
                 Rclip = ext_nc_JMA(in_nc)
+                if Rclip is None:
+                    next
             else:
                 print('nc file not found!!!',in_nc)
                 next
@@ -142,8 +149,10 @@ def stat_alljapan(year):
     #sys.exit()
 
 if __name__ == '__main__':
+    ext_nc_JMA("/data/nas_data/jma_radar/2014/2p-jmaradar5_2014-05-02_0000utc.nc")
     #for year in [2015,2016,2017]:
-    for year in [2016,2017]:
+    #for year in [2010,2011,2012,2013,2014,2018,2019]:
+    for year in [2014,2018,2019]:
         print("year:",year)
         stat_alljapan(year)
     
